@@ -143,6 +143,8 @@ public:
 	void refreshEmpty();
 	void resizeEmpty();
 
+	void showPeerMenu();
+
 	[[nodiscard]] bool isUserpicPress() const;
 	[[nodiscard]] bool isUserpicPressOnWide() const;
 	void cancelChatPreview();
@@ -463,6 +465,7 @@ private:
 	void handleChatListEntryRefreshes();
 	void moveSearchIn();
 	void dragPinnedFromTouch();
+	[[nodiscard]] bool hasChatTypeFilter() const;
 
 	void saveChatsFilterScrollState(FilterId filterId);
 	void restoreChatsFilterScrollState(FilterId filterId);

@@ -291,6 +291,7 @@ InnerWidget::InnerWidget(
 	) | rpl::start_with_next([=] {
 		_topicJumpCache = nullptr;
 		_chatsFilterTags.clear();
+		_rightButtons.clear();
 	}, lifetime());
 
 	session().downloaderTaskFinished(
@@ -1209,6 +1210,7 @@ void InnerWidget::paintEvent(QPaintEvent *e) {
 				p.translate(0, (_previewResults.size() - to) * _st->height);
 			}
 		}
+
 		if (!_searchResults.empty()) {
 			const auto text = showUnreadInSearchResults
 				? u"Search results"_q
@@ -1225,7 +1227,7 @@ void InnerWidget::paintEvent(QPaintEvent *e) {
 			const auto filterFont = filterOver
 				? st::searchedBarFont->underline()
 				: st::searchedBarFont;
-			if (_searchState.tab == ChatSearchTab::MyMessages) {
+			if (hasChatTypeFilter()) {
 				const auto text = ChatTypeFilterLabel(_searchState.filter);
 				if (!_chatTypeFilterWidth) {
 					_chatTypeFilterWidth = filterFont->width(text);
@@ -1532,6 +1534,21 @@ void InnerWidget::paintSearchTags(
 	_searchTags->paint(p, position, context.now, context.paused);
 }
 
+void InnerWidget::showPeerMenu() {
+	if (!_selected) {
+		return;
+	}
+	const auto &padding = st::defaultDialogRow.padding;
+	const auto pos = QPoint(
+		width() - padding.right(),
+		_selected->top() + _selected->height() + padding.bottom());
+	auto event = QContextMenuEvent(
+		QContextMenuEvent::Keyboard,
+		pos,
+		mapToGlobal(pos));
+	InnerWidget::contextMenuEvent(&event);
+}
+
 void InnerWidget::mouseMoveEvent(QMouseEvent *e) {
 	if (_chatPreviewTouchGlobal || _touchDragStartGlobal) {
 		return;
@@ -1757,7 +1774,7 @@ void InnerWidget::selectByMouse(QPoint globalPosition) {
 			}
 			auto selectedChatTypeFilter = false;
 			const auto from = skip - st::searchedBarHeight;
-			if (mouseY <= skip && mouseY >= from) {
+			if (hasChatTypeFilter() && mouseY <= skip && mouseY >= from) {
 				const auto left = width()
 					- _chatTypeFilterWidth
 					- 2 * st::searchedBarPosition.x();
@@ -2072,6 +2089,7 @@ bool InnerWidget::updateReorderPinned(QPoint localPosition) {
 	const auto draggingHeight = _dragging->height();
 	auto yaddWas = _pinnedRows[_draggingIndex].yadd.current();
 	auto shift = 0;
+	auto shiftHeight = 0;
 	auto now = crl::now();
 	if (_dragStart.y() > localPosition.y() && _draggingIndex > 0) {
 		shift = -floorclamp(_dragStart.y() - localPosition.y() + (draggingHeight / 2), draggingHeight, 0, _draggingIndex);
@@ -2081,6 +2099,7 @@ bool InnerWidget::updateReorderPinned(QPoint localPosition) {
 			std::swap(_pinnedRows[from], _pinnedRows[from - 1]);
 			_pinnedRows[from].yadd = anim::value(_pinnedRows[from].yadd.current() - draggingHeight, 0);
 			_pinnedRows[from].animStartTime = now;
+			shiftHeight -= (*(_shownList->cbegin() + from))->height();
 		}
 	} else if (_dragStart.y() < localPosition.y() && _draggingIndex + 1 < pinnedCount) {
 		shift = floorclamp(localPosition.y() - _dragStart.y() + (draggingHeight / 2), draggingHeight, 0, pinnedCount - _draggingIndex - 1);
@@ -2090,18 +2109,21 @@ bool InnerWidget::updateReorderPinned(QPoint localPosition) {
 			std::swap(_pinnedRows[from], _pinnedRows[from + 1]);
 			_pinnedRows[from].yadd = anim::value(_pinnedRows[from].yadd.current() + draggingHeight, 0);
 			_pinnedRows[from].animStartTime = now;
+			shiftHeight += (*(_shownList->cbegin() + from))->height();
 		}
 	}
 	if (shift) {
 		_draggingIndex += shift;
 		_aboveIndex = _draggingIndex;
-		_dragStart.setY(_dragStart.y() + shift * _st->height);
+		_dragStart.setY(_dragStart.y() + shiftHeight);
 		if (!_pinnedShiftAnimation.animating()) {
 			_pinnedShiftAnimation.start();
 		}
 	}
 	_aboveTopShift = qCeil(_pinnedRows[_aboveIndex].yadd.current());
-	_pinnedRows[_draggingIndex].yadd = anim::value(yaddWas - shift * _st->height, localPosition.y() - _dragStart.y());
+	_pinnedRows[_draggingIndex].yadd = anim::value(
+		yaddWas - shiftHeight,
+		localPosition.y() - _dragStart.y());
 	if (!_pinnedRows[_draggingIndex].animStartTime) {
 		_pinnedRows[_draggingIndex].yadd.finish();
 	}
@@ -2152,7 +2174,7 @@ bool InnerWidget::pinnedShiftAnimationCallback(crl::time now) {
 	}
 	if (updateMin >= 0) {
 		const auto minHeight = _st->height;
-		const auto maxHeight = st::forumDialogRow.height;
+		const auto maxHeight = st::taggedForumDialogRow.height;
 		auto top = pinnedOffset();
 		auto updateFrom = top + minHeight * (updateMin - 1);
 		auto updateHeight = maxHeight * (updateMax - updateMin + 3);
@@ -2844,7 +2866,9 @@ bool InnerWidget::scheduleChatPreview(QPoint positionOverride) {
 void InnerWidget::contextMenuEvent(QContextMenuEvent *e) {
 	_menu = nullptr;
 
-	if (e->reason() == QContextMenuEvent::Mouse) {
+	const auto fromMouse = e->reason() == QContextMenuEvent::Mouse;
+
+	if (fromMouse) {
 		selectByMouse(e->globalPos());
 	}
 
@@ -2906,6 +2930,9 @@ void InnerWidget::contextMenuEvent(QContextMenuEvent *e) {
 	QObject::connect(_menu.get(), &QObject::destroyed, [=] {
 		if (_menuRow.key) {
 			updateDialogRow(base::take(_menuRow));
+		}
+		if (!fromMouse) {
+			return;
 		}
 		const auto globalPosition = QCursor::pos();
 		if (rect().contains(mapFromGlobal(globalPosition))) {
@@ -3006,6 +3033,11 @@ void InnerWidget::dragPinnedFromTouch() {
 	const auto now = mapFromGlobal(_touchDragNowGlobal.value_or(global));
 	startReorderPinned(now);
 	updateReorderPinned(now);
+}
+
+bool InnerWidget::hasChatTypeFilter() const {
+	return !_searchResults.empty()
+		&& (_searchState.tab == ChatSearchTab::MyMessages);
 }
 
 void InnerWidget::searchRequested(bool loading) {

@@ -963,6 +963,7 @@ PRIVATE
     info/global_media/info_global_media_inner_widget.h
     info/global_media/info_global_media_provider.cpp
     info/global_media/info_global_media_provider.h
+    info/media/info_media_buttons.cpp
     info/media/info_media_buttons.h
     info/media/info_media_common.cpp
     info/media/info_media_common.h
@@ -1018,8 +1019,8 @@ PRIVATE
     info/saved/info_saved_sublists_widget.h
     info/settings/info_settings_widget.cpp
     info/settings/info_settings_widget.h
-    info/similar_channels/info_similar_channels_widget.cpp
-    info/similar_channels/info_similar_channels_widget.h
+    info/similar_peers/info_similar_peers_widget.cpp
+    info/similar_peers/info_similar_peers_widget.h
     info/statistics/info_statistics_common.h
     info/statistics/info_statistics_inner_widget.cpp
     info/statistics/info_statistics_inner_widget.h
@@ -1139,6 +1140,8 @@ PRIVATE
     media/audio/media_audio_loader.h
     media/audio/media_audio_loaders.cpp
     media/audio/media_audio_loaders.h
+    media/audio/media_audio_local_cache.cpp
+    media/audio/media_audio_local_cache.h
     media/audio/media_audio_track.cpp
     media/audio/media_audio_track.h
     media/audio/media_child_ffmpeg_loader.cpp
@@ -1207,6 +1210,8 @@ PRIVATE
     media/streaming/media_streaming_video_track.h
     media/view/media_view_group_thumbs.cpp
     media/view/media_view_group_thumbs.h
+    media/view/media_view_open_common.cpp
+    media/view/media_view_open_common.h
     media/view/media_view_overlay_opengl.cpp
     media/view/media_view_overlay_opengl.h
     media/view/media_view_overlay_raster.cpp
@@ -1225,7 +1230,6 @@ PRIVATE
     media/view/media_view_playback_controls.h
     media/view/media_view_playback_progress.cpp
     media/view/media_view_playback_progress.h
-    media/view/media_view_open_common.h
     media/system_media_controls_manager.h
     media/system_media_controls_manager.cpp
     menu/menu_antispam_validator.cpp
@@ -1477,6 +1481,8 @@ PRIVATE
     settings/settings_privacy_security.h
     settings/settings_scale_preview.cpp
     settings/settings_scale_preview.h
+    settings/settings_shortcuts.cpp
+    settings/settings_shortcuts.h
     settings/settings_type.h
     settings/settings_websites.cpp
     settings/settings_websites.h

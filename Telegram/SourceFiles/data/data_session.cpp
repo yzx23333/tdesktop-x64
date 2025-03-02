@@ -13,6 +13,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "apiwrap.h"
 #include "mainwidget.h"
 #include "api/api_bot.h"
+#include "api/api_premium.h"
 #include "api/api_text_entities.h"
 #include "api/api_user_names.h"
 #include "chat_helpers/stickers_lottie.h"
@@ -709,7 +710,7 @@ not_null<UserData*> Session::processUser(const MTPUser &data) {
 		if (const auto &status = data.vemoji_status()) {
 			result->setEmojiStatus(*status);
 		} else {
-			result->setEmojiStatus(0);
+			result->setEmojiStatus(EmojiStatusId());
 		}
 		if (!minimal) {
 			if (const auto botInfoVersion = data.vbot_info_version()) {
@@ -900,7 +901,7 @@ not_null<PeerData*> Session::processChat(const MTPChat &data) {
 		if (const auto &status = data.vemoji_status()) {
 			channel->setEmojiStatus(*status);
 		} else {
-			channel->setEmojiStatus(0);
+			channel->setEmojiStatus(EmojiStatusId());
 		}
 		if (minimal) {
 			if (channel->input.type() == mtpc_inputPeerEmpty
@@ -3492,8 +3493,10 @@ not_null<WebPageData*> Session::processWebpage(
 		WebPageCollage(),
 		nullptr,
 		nullptr,
+		nullptr,
 		0,
 		QString(),
+		false,
 		false,
 		data.vdate().v
 			? data.vdate().v
@@ -3518,8 +3521,10 @@ not_null<WebPageData*> Session::webpage(
 		WebPageCollage(),
 		nullptr,
 		nullptr,
+		nullptr,
 		0,
 		QString(),
+		false,
 		false,
 		TimeId(0));
 }
@@ -3537,9 +3542,11 @@ not_null<WebPageData*> Session::webpage(
 		WebPageCollage &&collage,
 		std::unique_ptr<Iv::Data> iv,
 		std::unique_ptr<WebPageStickerSet> stickerSet,
+		std::shared_ptr<UniqueGift> uniqueGift,
 		int duration,
 		const QString &author,
 		bool hasLargeMedia,
+		bool photoIsVideoCover,
 		TimeId pendingTill) {
 	const auto result = webpage(id);
 	webpageApplyFields(
@@ -3556,9 +3563,11 @@ not_null<WebPageData*> Session::webpage(
 		std::move(collage),
 		std::move(iv),
 		std::move(stickerSet),
+		std::move(uniqueGift),
 		duration,
 		author,
 		hasLargeMedia,
+		photoIsVideoCover,
 		pendingTill);
 	return result;
 }
@@ -3590,6 +3599,7 @@ void Session::webpageApplyFields(
 		}
 		return nullptr;
 	};
+
 	const auto lookupThemeDocument = [&]() -> DocumentData* {
 		if (const auto attributes = data.vattributes()) {
 			for (const auto &attribute : attributes->v) {
@@ -3600,6 +3610,8 @@ void Session::webpageApplyFields(
 					return (DocumentData*)nullptr;
 				}, [](const MTPDwebPageAttributeStickerSet &) {
 					return (DocumentData*)nullptr;
+				}, [](const MTPDwebPageAttributeUniqueStarGift &) {
+					return (DocumentData*)nullptr;
 				});
 				if (result) {
 					return result;
@@ -3608,6 +3620,7 @@ void Session::webpageApplyFields(
 		}
 		return nullptr;
 	};
+
 	using WebPageStickerSetPtr = std::unique_ptr<WebPageStickerSet>;
 	const auto lookupStickerSet = [&]() -> WebPageStickerSetPtr {
 		if (const auto attributes = data.vattributes()) {
@@ -3631,6 +3644,21 @@ void Session::webpageApplyFields(
 		}
 		return nullptr;
 	};
+
+	using UniqueGiftPtr = std::shared_ptr<UniqueGift>;
+	const auto lookupUniqueGift = [&]() -> UniqueGiftPtr {
+		if (const auto attributes = data.vattributes()) {
+			for (const auto &attribute : attributes->v) {
+				return attribute.match([&](
+						const MTPDwebPageAttributeUniqueStarGift &data) {
+					const auto gift = Api::FromTL(_session, data.vgift());
+					return gift ? gift->unique : nullptr;
+				}, [](const auto &) -> UniqueGiftPtr { return nullptr; });
+			}
+		}
+		return nullptr;
+	};
+
 	auto story = (Data::Story*)nullptr;
 	auto storyId = FullStoryId();
 	if (const auto attributes = data.vattributes()) {
@@ -3723,9 +3751,11 @@ void Session::webpageApplyFields(
 		WebPageCollage(this, data),
 		std::move(iv),
 		lookupStickerSet(),
+		lookupUniqueGift(),
 		data.vduration().value_or_empty(),
 		qs(data.vauthor().value_or_empty()),
 		data.is_has_large_media(),
+		data.is_video_cover_photo(),
 		pendingTill);
 }
 
@@ -3743,9 +3773,11 @@ void Session::webpageApplyFields(
 		WebPageCollage &&collage,
 		std::unique_ptr<Iv::Data> iv,
 		std::unique_ptr<WebPageStickerSet> stickerSet,
+		std::shared_ptr<UniqueGift> uniqueGift,
 		int duration,
 		const QString &author,
 		bool hasLargeMedia,
+		bool photoIsVideoCover,
 		TimeId pendingTill) {
 	const auto requestPending = (!page->pendingTill && pendingTill > 0);
 	const auto changed = page->applyChanges(
@@ -3761,9 +3793,11 @@ void Session::webpageApplyFields(
 		std::move(collage),
 		std::move(iv),
 		std::move(stickerSet),
+		std::move(uniqueGift),
 		duration,
 		author,
 		hasLargeMedia,
+		photoIsVideoCover,
 		pendingTill);
 	if (requestPending) {
 		_session->api().requestWebPageDelayed(page);
