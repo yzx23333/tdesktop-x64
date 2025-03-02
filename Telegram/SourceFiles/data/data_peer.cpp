@@ -1184,10 +1184,11 @@ void PeerData::setEmojiStatus(EmojiStatusId emojiStatusId, TimeId until) {
 }
 
 EmojiStatusId PeerData::emojiStatusId() const {
+/*
 	if (GetEnhancedBool("screenshot_mode")) {
 		return 0;
 	}
-
+*/
 	return _emojiStatusId;
 }
 

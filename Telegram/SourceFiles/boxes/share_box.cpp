@@ -222,7 +222,7 @@ ShareBox::ShareBox(QWidget*, Descriptor &&descriptor)
 		_bottomWidget->resizeToWidth(st::boxWideWidth);
 		_bottomWidget->show();
 	}
-	header = _descriptor.title;
+	header = _descriptor.titleOverride;
 }
 
 void ShareBox::prepareCommentField() {
