@@ -88,10 +88,6 @@ void FastShareLink(
 	const QString &url,
 	ShareBoxStyleOverrides st = {});
 
-struct RecipientPremiumRequiredError;
-[[nodiscard]] auto SharePremiumRequiredError()
--> Fn<RecipientPremiumRequiredError(not_null<UserData*>)>;
-
 struct RecipientMoneyRestrictionError;
 [[nodiscard]] auto ShareMessageMoneyRestrictionError()
 -> Fn<RecipientMoneyRestrictionError(not_null<UserData*>)>;
@@ -139,9 +135,6 @@ public:
 		using MoneyRestrictionError = RecipientMoneyRestrictionError;
 		Fn<MoneyRestrictionError(
 			not_null<UserData*>)> moneyRestrictionError;
-
-		using PremiumRequiredError = RecipientPremiumRequiredError;
-		Fn<PremiumRequiredError(not_null<UserData*>)> premiumRequiredError;
 	};
 	ShareBox(QWidget*, Descriptor &&descriptor);
 

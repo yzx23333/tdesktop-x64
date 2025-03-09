@@ -517,6 +517,10 @@ bool UserData::hasRequirePremiumToWrite() const {
 	return (flags() & UserDataFlag::HasRequirePremiumToWrite);
 }
 
+bool UserData::canSendIgnoreRequirePremium() const {
+	return !isInaccessible() && !isRepliesChat() && !isVerifyCodes();
+}
+
 bool UserData::hasStarsPerMessage() const {
 	return (flags() & UserDataFlag::HasStarsPerMessage);
 }

@@ -2665,7 +2665,7 @@ void ShowNewForwardMessagesBox(
 							.captionsCount = ItemsForwardCaptionsCount(items),
 							.show = !hasOnlyForcedForwardedInfo,
 						},
-						.premiumRequiredError = SharePremiumRequiredError(),
+						.moneyRestrictionError = ShareMessageMoneyRestrictionError(),
 					}), Ui::LayerOption::CloseOther);
 }
 
