@@ -2478,6 +2478,7 @@ QPointer<Ui::BoxContent> ShowOldForwardMessagesBox(
 					not_null<PeerData*> peer) -> Controller::Chosen {
 				return peer->owner().history(peer);
 			}) | ranges::to_vector,
+			[=] { return true; }, // checkPaid,
 			comment->entity()->getTextWithAppliedMarkdown(),
 			options,
 			state->box->forwardOptionsData());

@@ -180,6 +180,7 @@ public:
 	[[nodiscard]] bool requiresPremiumToWrite() const;
 	[[nodiscard]] bool messageMoneyRestrictionsKnown() const;
 	[[nodiscard]] bool canSendIgnoreMoneyRestrictions() const;
+	[[nodiscard]] bool canSendIgnoreRequirePremium() const;
 	[[nodiscard]] bool readDatesPrivate() const;
 
 	void setStarsPerMessage(int stars);
