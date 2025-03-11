@@ -64,3 +64,4 @@
 60. Support to drag and drop in the filter menu
 61. Support sending and viewing location
 62. Sticker pack owner info
+63. Disable Premium/Stars Annoyance
