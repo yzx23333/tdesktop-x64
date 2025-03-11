@@ -1251,6 +1251,10 @@ void Filler::addTTLSubmenu(bool addSeparator) {
 }
 
 void Filler::addSendGift() {
+	if (GetEnhancedBool("disable_premium_annoyance")) {
+		return;
+	}
+
 	const auto user = _peer->asUser();
 	const auto channel = _peer->asBroadcast();
 	if (!user && !channel) {

@@ -2184,6 +2184,10 @@ void ChooseStarGiftRecipient(
 void ShowStarGiftBox(
 		not_null<Window::SessionController*> controller,
 		not_null<PeerData*> peer) {
+	if (GetEnhancedBool("disable_premium_annoyance")) {
+		return;
+	}
+
 	struct Session {
 		PeerData *peer = nullptr;
 		bool premiumGiftsReady = false;

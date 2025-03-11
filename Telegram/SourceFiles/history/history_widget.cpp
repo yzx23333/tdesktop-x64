@@ -2080,6 +2080,10 @@ void HistoryWidget::setupShortcuts() {
 }
 
 void HistoryWidget::setupGiftToChannelButton() {
+	if (GetEnhancedBool("disable_premium_annoyance")) {
+		return;
+	}
+
 	const auto setupButton = [=](not_null<Ui::RpWidget*> parent) {
 		auto *button = Ui::CreateChild<Ui::IconButton>(
 			parent.get(),

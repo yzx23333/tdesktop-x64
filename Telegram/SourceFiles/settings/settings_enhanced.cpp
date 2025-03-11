@@ -260,6 +260,20 @@ namespace Settings {
 
 		AddButtonWithIcon(
 				inner,
+				tr::lng_settings_disable_premium_annoyance(),
+				st::settingsButtonNoIcon
+		)->toggleOn(
+				rpl::single(GetEnhancedBool("disable_premium_annoyance"))
+		)->toggledChanges(
+		) | rpl::filter([=](bool toggled) {
+			return (toggled != GetEnhancedBool("disable_premium_annoyance"));
+		}) | rpl::start_with_next([=](bool toggled) {
+			SetEnhancedValue("disable_premium_annoyance", toggled);
+			EnhancedSettings::Write();
+		}, container->lifetime());
+
+		AddButtonWithIcon(
+				inner,
 				tr::lng_settings_disable_global_search(),
 				st::settingsButtonNoIcon
 		)->toggleOn(
