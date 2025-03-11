@@ -267,7 +267,7 @@ bool Session::premium() const {
 }
 
 bool Session::premiumPossible() const {
-	return premium() || premiumCanBuy();
+	return (premium() || premiumCanBuy()) && !GetEnhancedBool("disable_premium_annoyance");
 }
 
 bool Session::premiumBadgesShown() const {
