@@ -270,6 +270,7 @@ namespace Settings {
 		}) | rpl::start_with_next([=](bool toggled) {
 			SetEnhancedValue("disable_premium_annoyance", toggled);
 			EnhancedSettings::Write();
+			Core::Restart();
 		}, container->lifetime());
 
 		AddButtonWithIcon(
