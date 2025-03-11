@@ -17,7 +17,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_session.h"
 
 namespace Window {
-
 SeparateId::SeparateId(std::nullptr_t) {
 }
 

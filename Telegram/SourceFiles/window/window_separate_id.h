@@ -47,6 +47,12 @@ struct SeparateSharedMedia {
 	SeparateSharedMediaType type = SeparateSharedMediaType::None;
 	not_null<PeerData*> peer;
 	MsgId topicRootId = MsgId();
+
+	SeparateSharedMedia(SeparateSharedMediaType type, not_null<PeerData*> peer, MsgId topicRootId) :
+	type(type),
+	peer(peer),
+	topicRootId(topicRootId) {
+	}
 };
 
 struct SeparateId {
