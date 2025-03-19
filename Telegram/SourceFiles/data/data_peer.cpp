@@ -1520,6 +1520,7 @@ bool PeerData::canRevokeFullHistory() const {
 	if (const auto user = asUser()) {
 		return !isSelf()
 			&& (!user->isBot() || user->isSupport())
+			&& !user->isInaccessible()
 			&& session().serverConfig().revokePrivateInbox
 			&& (session().serverConfig().revokePrivateTimeLimit == 0x7FFFFFFF);
 	} else if (const auto chat = asChat()) {
