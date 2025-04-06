@@ -594,7 +594,8 @@ mac:
         -D CMAKE_OSX_DEPLOYMENT_TARGET:STRING=$MACOSX_DEPLOYMENT_TARGET \\
         -D WITH_JPEG8=ON \\
         -D ENABLE_SHARED=OFF \\
-        -D PNG_SUPPORTED=OFF
+        -D PNG_SUPPORTED=OFF \\
+        -D CMAKE_POLICY_VERSION_MINIMUM=3.5
     cmake --build build.arm64 $MAKE_THREADS_CNT
     CFLAGS="-arch x86_64" cmake -B build . \\
         -D CMAKE_SYSTEM_NAME=Darwin \\
@@ -604,7 +605,8 @@ mac:
         -D CMAKE_OSX_DEPLOYMENT_TARGET:STRING=$MACOSX_DEPLOYMENT_TARGET \\
         -D WITH_JPEG8=ON \\
         -D ENABLE_SHARED=OFF \\
-        -D PNG_SUPPORTED=OFF
+        -D PNG_SUPPORTED=OFF \\
+        -D CMAKE_POLICY_VERSION_MINIMUM=3.5
     cmake --build build $MAKE_THREADS_CNT
     lipo -create build.arm64/libjpeg.a build/libjpeg.a -output build/libjpeg.a
     lipo -create build.arm64/libturbojpeg.a build/libturbojpeg.a -output build/libturbojpeg.a
