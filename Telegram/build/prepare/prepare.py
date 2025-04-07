@@ -936,7 +936,8 @@ mac:
         -D ENABLE_SDL=OFF \\
         -D BUILD_SHARED_LIBS=OFF \\
         -D ENABLE_DECODER=ON \\
-        -D ENABLE_ENCODER=OFF
+        -D ENABLE_ENCODER=OFF \\
+        -D CMAKE_POLICY_VERSION_MINIMUM=3.5
     cmake --build . --config MinSizeRel $MAKE_THREADS_CNT
     cmake --install . --config MinSizeRel
 """)
