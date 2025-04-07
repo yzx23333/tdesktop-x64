@@ -1408,7 +1408,8 @@ mac:
         -D ALSOFT_TESTS=OFF \\
         -D LIBTYPE:STRING=STATIC \\
         -D CMAKE_OSX_DEPLOYMENT_TARGET:STRING=$MACOSX_DEPLOYMENT_TARGET \\
-        -D CMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+        -D CMAKE_OSX_ARCHITECTURES="x86_64;arm64" \\
+        -D CMAKE_POLICY_VERSION_MINIMUM=3.5
     cmake --build build $MAKE_THREADS_CNT
     cmake --install build
 """)
