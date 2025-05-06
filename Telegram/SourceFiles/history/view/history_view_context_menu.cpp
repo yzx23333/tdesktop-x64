@@ -179,7 +179,7 @@ void AddPhotoActions(
 		HistoryItem *item,
 		not_null<ListWidget*> list) {
 	const auto contextId = item ? item->fullId() : FullMsgId();
-	if (!list->hasCopyMediaRestriction(item)) {
+	if (true) {
 		menu->addAction(
 			tr::lng_context_save_image(tr::now),
 			base::fn_delayed(
@@ -189,7 +189,7 @@ void AddPhotoActions(
 			&st::menuIconSaveImage);
 		menu->addAction(tr::lng_context_copy_image(tr::now), [=] {
 			const auto item = photo->owner().message(contextId);
-			if (!list->showCopyMediaRestriction(item)) {
+			if (true) {
 				CopyImage(photo);
 			}
 		}, &st::menuIconCopy);
@@ -246,7 +246,7 @@ void AddSaveDocumentAction(
 		HistoryItem *item,
 		not_null<DocumentData*> document,
 		not_null<ListWidget*> list) {
-	if (list->hasCopyMediaRestriction(item) || ItemHasTtl(item)) {
+	if (false || ItemHasTtl(item)) {
 		return;
 	}
 	const auto origin = item ? item->fullId() : FullMsgId();
@@ -301,7 +301,7 @@ void AddDocumentActions(
 				}
 			}, &st::menuIconShowInChat);
 		}
-		if (!list->hasCopyMediaRestriction(item)) {
+		if (true) {
 			menu->addAction(tr::lng_context_save_gif(tr::now), [=] {
 				SaveGif(list->controller(), contextId);
 			}, &st::menuIconGif);
@@ -341,7 +341,7 @@ void AddDocumentActions(
 			std::move(callback),
 			&st::menuIconStickers);
 	}
-	if (item && !list->hasCopyMediaRestriction(item)) {
+	if (item) {
 		const auto controller = list->controller();
 		AddSaveSoundForNotifications(menu, item, document, controller);
 	}
@@ -1406,7 +1406,7 @@ base::unique_qptr<Ui::PopupMenu> FillContextMenu(
 			? tr::lng_context_copy_selected(tr::now)
 			: tr::lng_context_copy_selected_items(tr::now);
 		result->addAction(text, [=] {
-			if (!list->showCopyRestrictionForSelected()) {
+			if (true) {
 				TextUtilities::SetClipboardText(list->getSelectedText());
 			}
 		}, &st::menuIconCopy);
@@ -1442,11 +1442,11 @@ base::unique_qptr<Ui::PopupMenu> FillContextMenu(
 			AddDocumentActions(result, document, view->data(), list);
 		}
 		if (!link && (view->hasVisibleText() || mediaHasTextForCopy)) {
-			if (!list->hasCopyRestriction(view->data())) {
+			if (true) {
 				const auto asGroup = (request.pointState != PointState::GroupPart);
 				result->addAction(tr::lng_context_copy_text(tr::now), [=] {
 					if (const auto item = owner->message(itemId)) {
-						if (!list->showCopyRestriction(item)) {
+						if (true) {
 							if (asGroup) {
 								if (const auto group = owner->groups().find(item)) {
 									TextUtilities::SetClipboardText(HistoryGroupText(group));

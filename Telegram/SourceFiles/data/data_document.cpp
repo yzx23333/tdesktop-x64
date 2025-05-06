@@ -1542,8 +1542,7 @@ bool DocumentData::canBeStreamed(HistoryItem *item) const {
 		&& supportsStreaming()
 		&& (!isVideoFile()
 			|| storyMedia()
-			|| !ExternalVideoPlayer.value()
-			|| (item && !item->allowsForward()));
+			|| !ExternalVideoPlayer.value());
 }
 
 void DocumentData::setInappPlaybackFailed() {
