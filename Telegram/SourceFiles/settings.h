@@ -195,7 +195,7 @@ inline void SetNetworkBoost(int boost) {
 
 inline void SetNetworkDLBoost(bool boost) {
 	if (boost) {
-		cSetNetDownloadChunkSize(1024 * 1024);
+		cSetNetDownloadChunkSize(512 * 1024);
 	} else {
 		cSetNetDownloadChunkSize(128 * 1024);
 	}
