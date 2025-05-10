@@ -712,7 +712,7 @@ bool PeerData::canTransferGifts() const {
 bool PeerData::canEditMessagesIndefinitely() const {
 	if (const auto user = asUser()) {
 		return user->isSelf();
-	} else if (const auto chat = asChat()) {
+	} else if (isChat()) {
 		return false;
 	} else if (const auto channel = asChannel()) {
 		return channel->isMegagroup()
@@ -739,6 +739,13 @@ bool PeerData::canExportChatHistory() const {
 	}
 	if (const auto from = migrateFrom()) {
 		return from->canExportChatHistory();
+	}
+	return false;
+}
+
+bool PeerData::autoTranslation() const {
+	if (const auto channel = asChannel()) {
+		return channel->autoTranslation();
 	}
 	return false;
 }
@@ -1447,7 +1454,7 @@ Data::ForumTopic *PeerData::forumTopicFor(MsgId rootId) const {
 }
 
 bool PeerData::allowsForwarding() const {
-	if (const auto user = asUser()) {
+	if (isUser()) {
 		return true;
 	} else if (const auto channel = asChannel()) {
 		return channel->allowsForwarding();
