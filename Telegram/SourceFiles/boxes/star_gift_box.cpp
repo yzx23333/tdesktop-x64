@@ -31,6 +31,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "chat_helpers/tabbed_panel.h"
 #include "chat_helpers/tabbed_selector.h"
 #include "core/ui_integration.h"
+#include "data/components/promo_suggestions.h"
 #include "data/data_birthday.h"
 #include "data/data_changes.h"
 #include "data/data_channel.h"
@@ -196,7 +197,7 @@ struct ResaleGiftsDescriptor {
 struct ResaleFilter {
 	uint64 attributesHash = 0;
 	base::flat_set<AttributeId> attributes;
-	ResaleSort sort = ResaleSort::Date;
+	ResaleSort sort = ResaleSort::Price;
 
 	friend inline bool operator==(
 		const ResaleFilter &,
@@ -2939,7 +2940,27 @@ void AddBlock(
 				});
 			}
 		} else {
+			// First, gather information about which gifts are available on resale
+			base::flat_set<uint64> resaleGiftIds;
+			if (price != kPriceTabResale) {
+				// Only need this info when not viewing the resale tab
+				for (const auto &gift : gifts) {
+					if (gift.resale) {
+						resaleGiftIds.insert(gift.info.id);
+					}
+				}
+			}
+
 			const auto pred = [&](const GiftTypeStars &gift) {
+				// Skip sold out gifts if they're available on resale
+				// (unless we're specifically viewing resale gifts)
+				if (price != kPriceTabResale &&
+					IsSoldOut(gift.info) &&
+					!gift.resale &&
+					resaleGiftIds.contains(gift.info.id)) {
+					return true; // Remove this gift
+				}
+
 				return (price == kPriceTabLimited)
 					? (!gift.info.limitedCount)
 					: (price == kPriceTabResale)
@@ -3441,7 +3462,8 @@ Controller::Controller(not_null<Main::Session*> session, PickCallback pick)
 : ContactsBoxController(session)
 , _pick(std::move(pick))
 , _contactBirthdays(
-	session->data().knownContactBirthdays().value_or(std::vector<UserId>{}))
+	session->promoSuggestions().knownContactBirthdays().value_or(
+		std::vector<UserId>{}))
 , _selfOption(
 	MakeCustomList(
 		session,
@@ -3596,7 +3618,8 @@ bool Controller::overrideKeyboardNavigation(
 
 std::unique_ptr<PeerListRow> Controller::createRow(
 		not_null<UserData*> user) {
-	if (const auto birthday = user->owner().knownContactBirthdays()) {
+	if (const auto birthday
+			= user->session().promoSuggestions().knownContactBirthdays()) {
 		if (ranges::contains(*birthday, peerToUser(user->id))) {
 			return nullptr;
 		}
@@ -3626,10 +3649,7 @@ void Controller::rowClicked(not_null<PeerListRow*> row) {
 void ChooseStarGiftRecipient(
 		not_null<Window::SessionController*> window) {
 	const auto session = &window->session();
-	const auto lifetime = std::make_shared<rpl::lifetime>();
-	session->data().contactBirthdays(
-	) | rpl::start_with_next(crl::guard(session, [=] {
-		lifetime->destroy();
+	session->promoSuggestions().requestContactBirthdays([=] {
 		auto controller = std::make_unique<Controller>(
 			session,
 			[=](not_null<PeerData*> peer, PickType type) {
@@ -3654,7 +3674,7 @@ void ChooseStarGiftRecipient(
 		window->show(
 			Box<PeerListBox>(std::move(controller), std::move(initBox)),
 			LayerOption::KeepOther);
-	}), *lifetime);
+	});
 }
 
 void ShowStarGiftBox(
