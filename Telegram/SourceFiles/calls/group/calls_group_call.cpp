@@ -2230,12 +2230,6 @@ void GroupCall::setNoiseSuppression(bool enabled) {
 	}
 }
 
-void GroupCall::setStereoMode(bool enabled) {
-	if (_instance) {
-		_instance->setIsStereoModeEnabled(enabled);
-	}
-}
-
 void GroupCall::addVideoOutput(
 		const std::string &endpoint,
 		not_null<Webrtc::VideoTrack*> track) {
@@ -2885,7 +2879,7 @@ void GroupCall::toggleRecording(
 	}).send();
 }
 
-uint16_t getCustomBitrate() {
+int32_t getCustomBitrate() {
 	int option = GetEnhancedInt("bitrate");
 	switch (option) {
 		case 1:
@@ -3019,6 +3013,7 @@ bool GroupCall::tryCreateController() {
 			});
 			return result;
 		},
+		.outgoingAudioBitrateKbit = getCustomBitrate(),
 		.disableOutgoingAudioProcessing = !settings.groupCallNoiseSuppression(),
 		.videoContentType = tgcalls::VideoContentType::Generic,
 		.initialEnableNoiseSuppression
@@ -3037,9 +3032,6 @@ bool GroupCall::tryCreateController() {
 			});
 			return result;
 		},
-		.enableStereoMode = GetEnhancedBool("stereo_mode"),
-		.customBitrate = getCustomBitrate(),
-		.enableHDVideo = GetEnhancedBool("hd_video"),
 		.e2eEncryptDecrypt = (_e2eEncryptDecrypt
 			? _e2eEncryptDecrypt->callback()
 			: nullptr),
@@ -3094,7 +3086,6 @@ bool GroupCall::tryCreateScreencast() {
 		.createAudioDeviceModule = Webrtc::LoopbackAudioDeviceModuleCreator(),
 		.videoCapture = _screenCapture,
 		.videoContentType = tgcalls::VideoContentType::Screencast,
-		.enableHDVideo = GetEnhancedBool("hd_video"),
 		.videoCodecPreferences = lookupVideoCodecPreferences(),
 		.e2eEncryptDecrypt = (_e2eEncryptDecrypt
 			? _e2eEncryptDecrypt->callback()

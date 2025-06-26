@@ -292,7 +292,6 @@ public:
 	void startScheduledNow();
 	void toggleScheduleStartSubscribed(bool subscribed);
 	void setNoiseSuppression(bool enabled);
-	void setStereoMode(bool enabled);
 	void removeConferenceParticipants(
 		const base::flat_set<UserId> userIds,
 		bool removingStale = false);

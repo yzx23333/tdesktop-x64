@@ -351,7 +351,7 @@ void SettingsBox(
 	) | rpl::filter([=](bool toggled) {
 		return (toggled != GetEnhancedBool("show_scheduled_button"));
 	}) | rpl::start_with_next([=](bool toggled) {
-		call->setStereoMode(toggled);
+		// call->setStereoMode(toggled);
 		if (call->muted() == MuteState::Active) {
 			call->setMuted(MuteState::Muted);
 			call->setMutedAndUpdate(MuteState::Active);
