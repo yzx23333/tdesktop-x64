@@ -17,9 +17,6 @@ https://github.com/frknkrc44/tdesktop-x64/blob/dev/LEGAL
 
 using TranslationCallback = std::function<void(QString)>;
 
-inline QByteArray QByteArray::fromStdString(const std::string &s)
-{ return QByteArray(s.data(), int(s.size())); }
-
 class GTranslate : public QObject {
     Q_OBJECT
     public:

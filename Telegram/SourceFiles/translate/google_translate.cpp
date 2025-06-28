@@ -24,8 +24,8 @@ void GTranslate::translate(QString from, QString to, QString query, TranslationC
     auto url = ss.str();
 
     auto request = QNetworkRequest(QUrl(QString::fromStdString(url)));
-    auto setHeader = [&request](std::string key, std::string value) {
-        request.setRawHeader(QByteArray::fromStdString(key), QByteArray::fromStdString(value));
+    auto setHeader = [&request](QString key, QString value) {
+        request.setRawHeader(key.toUtf8(), value.toUtf8());
     };
 
     setHeader("User-Agent", "Mozilla/5.0 (X11; U; Linux armv7l; no-NO; rv:1.9.2.3pre) Gecko/20100723 Firefox/3.5 Maemo Browser 1.7.4.8 RX-51 N900");
