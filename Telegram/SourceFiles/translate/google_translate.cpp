@@ -44,11 +44,14 @@ void GTranslate::translate(QString from, QString to, QString query, TranslationC
     if (reply->error() == QNetworkReply::NoError) {
         auto all = reply->readAll();
         auto rc = QString::fromStdString("<div class=\"result-container\">");
-        auto idx = all.indexOf(rc.toStdString());
+        auto idx = all.indexOf(rc.toStdString().c_str());
         auto right = all.mid(idx, idx + rc.size());
         auto left = right.mid(rc.size(), right.indexOf("</div>") - rc.size());
 
-        onFinished(left);
+        QTextDocument text;
+        text.setHtml(left);
+
+        onFinished(text.toPlainText());
     } else {
         auto error = reply->errorString();
 

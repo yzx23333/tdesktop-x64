@@ -10,6 +10,7 @@ https://github.com/frknkrc44/tdesktop-x64/blob/dev/LEGAL
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
 #include <QString>
+#include <QTextDocument>
 
 #include <cstring>
 #include <iostream>
