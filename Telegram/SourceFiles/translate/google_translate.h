@@ -4,7 +4,8 @@ the unofficial app based on Telegram Desktop.
 For license and copyright information please follow this link:
 https://github.com/frknkrc44/tdesktop-x64/blob/dev/LEGAL
 */
-#pragma once
+#ifndef __GOOGLE_TRANSLATE_H__
+#define __GOOGLE_TRANSLATE_H__
 
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
@@ -32,3 +33,5 @@ class GTranslate : public QObject {
     private:
         QNetworkAccessManager* manager;
 };
+
+#endif // __GOOGLE_TRANSLATE_H__
