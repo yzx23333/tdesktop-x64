@@ -14,6 +14,7 @@ https://github.com/frknkrc44/tdesktop-x64/blob/dev/LEGAL
 
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 using TranslationCallback = std::function<void(QString)>;
