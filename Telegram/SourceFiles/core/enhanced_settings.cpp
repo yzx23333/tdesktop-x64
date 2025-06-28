@@ -70,7 +70,6 @@ namespace EnhancedSettings {
 			return true;
 		}
 
-/*
 		bool ReadObjectOption(QJsonObject obj, QString key, std::function<void(QJsonObject)> callback) {
 			auto readResult = false;
 			auto readValueResult = ReadOption(obj, key, [&](QJsonValue v) {
@@ -92,7 +91,6 @@ namespace EnhancedSettings {
 			});
 			return (readValueResult && readResult);
 		}
-*/
 
 		bool ReadStringOption(QJsonObject obj, QString key, std::function<void(QString)> callback) {
 			auto readResult = false;
@@ -105,7 +103,6 @@ namespace EnhancedSettings {
 			return (readValueResult && readResult);
 		}
 
-/*
 		bool ReadIntOption(QJsonObject obj, QString key, std::function<void(int)> callback) {
 			auto readResult = false;
 			auto readValueResult = ReadOption(obj, key, [&](QJsonValue v) {
@@ -116,7 +113,6 @@ namespace EnhancedSettings {
 			});
 			return (readValueResult && readResult);
 		}
-*/
 
 		bool ReadBoolOption(QJsonObject obj, QString key, std::function<void(bool)> callback) {
 			auto readResult = false;
