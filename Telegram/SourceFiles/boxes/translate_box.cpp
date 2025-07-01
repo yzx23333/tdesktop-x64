@@ -233,7 +233,7 @@ void TranslateBox(
 				showText(TextWithEntities{ .text = result });
 			};
 
-			state->translate->translate("auto", toTC ? "zh-Hant" : to.twoLetterCode(), text.text, result);
+			state->translate->translate("auto", toTC ? "zh-TW" : "zh-CN", text.text, result);
 		} else {
 			state->api.request(MTPmessages_TranslateText(
 				MTP_flags(flags),

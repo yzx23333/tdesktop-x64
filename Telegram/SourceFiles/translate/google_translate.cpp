@@ -6,6 +6,7 @@ https://github.com/frknkrc44/tdesktop-x64/blob/dev/LEGAL
 */
 
 #include "google_translate.h"
+#include <QUrl>
 
 GTranslate::GTranslate() {
     manager = new QNetworkAccessManager(this);
@@ -15,11 +16,11 @@ void GTranslate::translate(QString from, QString to, QString query, TranslationC
     QEventLoop eventLoop;
     QObject::connect(manager, SIGNAL(finished(QNetworkReply*)), &eventLoop, SLOT(quit()));
 
-    query.replace(QRegularExpression("\\s"), "+");
+    QByteArray encodedQuery = QUrl::toPercentEncoding(query);
     std::stringstream ss;
-    ss  << "https://translate.google.com/m?sl=" << from.toStdString()
-        << "&tl=" << to.toStdString()
-        << "&q=" << query.toStdString();
+    ss << "https://translate.google.com/m?sl=" << from.toStdString()
+       << "&tl=" << to.toStdString()
+       << "&q=" << encodedQuery.toStdString();
 
     auto url = ss.str();
 
@@ -28,8 +29,8 @@ void GTranslate::translate(QString from, QString to, QString query, TranslationC
         request.setRawHeader(key.toUtf8(), value.toUtf8());
     };
 
-    setHeader("User-Agent", "Mozilla/5.0 (X11; U; Linux armv7l; no-NO; rv:1.9.2.3pre) Gecko/20100723 Firefox/3.5 Maemo Browser 1.7.4.8 RX-51 N900");
-    setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+    setHeader("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Mobile Safari/537.36");
+    setHeader("Accept", "text/html,application/xhtml+xml,application/xml");
     setHeader("Accept-Language", "en-US");
     setHeader("Alt-Used", "translate.google.com");
     setHeader("Connection", "keep-alive");
