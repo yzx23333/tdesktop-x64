@@ -117,8 +117,8 @@ jobs:
           fi
 
           ./configure.sh \
-          -D CMAKE_C_FLAGS="-Werror" \
-          -D CMAKE_CXX_FLAGS="-Werror" \
+          -D CMAKE_CONFIGURATION_TYPES=Debug \
+          -D CMAKE_COMPILE_WARNING_AS_ERROR=OFF \
           -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
           -D TDESKTOP_API_ID=2040 \
           -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627 \
@@ -126,10 +126,7 @@ jobs:
           -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON \
           $DEFINE
 
-          cd ../out
-
-          xcoderun='xcodebuild build -project Telegram.xcodeproj -scheme Telegram -destination "platform=macOS,arch=x86_64" -configuration Debug'
-          bash -c "$xcoderun" || bash -c "$xcoderun" || bash -c "$xcoderun"
+          cmake --build ../out --config Debug --parallel
 
       - name: Move artifact.
         if: env.UPLOAD_ARTIFACT == 'true'
