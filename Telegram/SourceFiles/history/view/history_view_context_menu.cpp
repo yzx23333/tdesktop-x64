@@ -189,7 +189,7 @@ void AddPhotoActions(
 				[=] { SavePhotoToFile(photo); }),
 			&st::menuIconSaveImage);
 		menu->addAction(tr::lng_context_copy_image(tr::now), [=] {
-			const auto item = photo->owner().message(contextId);
+			//const auto item = photo->owner().message(contextId);
 			if (true) {
 				CopyImage(photo);
 			}
