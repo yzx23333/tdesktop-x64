@@ -3374,6 +3374,7 @@ void HistoryInner::showContextMenu(QContextMenuEvent *e, bool showFromTouch) {
 			!added);
 	}
 
+	/*
 	if (hasWhoReactedItem) {
 		HistoryView::AddWhoReactedAction(
 			_menu,
@@ -3386,6 +3387,7 @@ void HistoryInner::showContextMenu(QContextMenuEvent *e, bool showFromTouch) {
 			leaderOrSelf,
 			_controller);
 	}
+	*/
 
 	if (_menu->empty()) {
 		_menu = nullptr;
