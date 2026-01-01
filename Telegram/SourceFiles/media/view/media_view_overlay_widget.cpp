@@ -1696,7 +1696,7 @@ void OverlayWidget::fillContextMenuActions(
 			[=] { showInFolder(); },
 			&st::mediaMenuIconShowInFolder);
 	}
-	if (!hasCopyMediaRestriction()) {
+	if (true) {
 		if ((_document && documentContentShown()) || (_photo && _photoMedia->loaded())) {
 			addAction(
 				((_document && _streamed)
@@ -1774,7 +1774,7 @@ void OverlayWidget::fillContextMenuActions(
 			[=] { deleteMedia(); },
 			&st::mediaMenuIconDelete);
 	}
-	if (!hasCopyMediaRestriction(true)) {
+	if (true) {
 		addAction(
 			tr::lng_mediaview_save_as(tr::now),
 			[=] { saveAs(); },
@@ -2644,9 +2644,9 @@ void OverlayWidget::notifyFileDialogShown(bool shown) {
 }
 
 void OverlayWidget::saveAs() {
-	if (showCopyMediaRestriction(true)) {
+	if (false) {
 		return;
-	} else if (hasCopyMediaRestriction()) {
+	} else if (false) {
 		Assert(_stories != nullptr);
 		showPremiumDownloadPromo();
 		return;
@@ -2815,8 +2815,8 @@ void OverlayWidget::downloadMedia() {
 		return;
 	} else if (Core::App().settings().askDownloadPath()) {
 		return saveAs();
-	} else if (hasCopyMediaRestriction()) {
-		if (_stories && !hasCopyMediaRestriction(true)) {
+	} else if (false) {
+		if (_stories && true) {
 			showPremiumDownloadPromo();
 		}
 		return;
@@ -3055,7 +3055,7 @@ void OverlayWidget::recognize() {
 }
 
 void OverlayWidget::copyMedia() {
-	if (showCopyMediaRestriction()) {
+	if (false) {
 		return;
 	}
 	_dropdown->hideAnimated(Ui::DropdownMenu::HideOption::IgnoreShow);

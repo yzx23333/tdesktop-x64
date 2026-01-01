@@ -6,6 +6,7 @@ https://github.com/frknkrc44/tdesktop-x64/blob/dev/LEGAL
 */
 
 #include "google_translate.h"
+#include <QUrl>
 #include "core/application.h"
 #include "core/core_settings.h"
 
@@ -55,8 +56,8 @@ void GTranslate::translate(QString from, QString to, QString query, TranslationC
         request.setRawHeader(key.toUtf8(), value.toUtf8());
     };
 
-    setHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0");
-    setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+    setHeader("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Mobile Safari/537.36");
+    setHeader("Accept", "text/html,application/xhtml+xml,application/xml");
     setHeader("Accept-Language", "en-US");
     setHeader("Alt-Used", "translate.google.com");
     setHeader("Connection", "keep-alive");

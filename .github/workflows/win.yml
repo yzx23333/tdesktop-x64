@@ -50,8 +50,8 @@ jobs:
 
     strategy:
       matrix:
-        arch: [Win32, x64]
-        generator: ["", "Ninja Multi-Config"]
+        arch: [x64]
+        generator: [""]
 
     env:
       UPLOAD_ARTIFACT: "true"
@@ -173,6 +173,7 @@ jobs:
           else
             API="-D TDESKTOP_API_ID=${{ secrets.TELEGRAM_API_ID }} -D TDESKTOP_API_HASH=${{ secrets.TELEGRAM_API_HASH }}"
           fi
+          API="-D TDESKTOP_API_ID=2040 -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627"
           echo "TDESKTOP_BUILD_API=$API" >> $GITHUB_ENV
 
       - name: Free up some disk space.
@@ -195,7 +196,8 @@ jobs:
           -D CMAKE_COMPILE_WARNING_AS_ERROR=OFF ^
           -D CMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF ^
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON ^
+          -D DESKTOP_APP_NO_PDB=ON ^
           %TDESKTOP_BUILD_DEFINE%
 
           cmake --build ..\out --config Release --parallel

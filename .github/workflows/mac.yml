@@ -124,13 +124,13 @@ jobs:
 
           ./configure.sh \
           -D CMAKE_CONFIGURATION_TYPES=Release \
+          -D CMAKE_EXE_LINKER_FLAGS="-s" \
           -D CMAKE_COMPILE_WARNING_AS_ERROR=OFF \
           -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-          -D TDESKTOP_API_TEST=OFF \
+          -D TDESKTOP_API_ID=2040 \
+          -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627 \
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON \
-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF \
-          -D TDESKTOP_API_ID=${{ secrets.TELEGRAM_API_ID }} \
-          -D TDESKTOP_API_HASH=${{ secrets.TELEGRAM_API_HASH }} \
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON \
           $DEFINE
 
           cmake --build ../out --config Release --parallel

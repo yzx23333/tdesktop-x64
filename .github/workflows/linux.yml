@@ -119,15 +119,14 @@ jobs:
           -e CONFIG=Release \
           $IMAGE_TAG \
           /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
+          -D TDESKTOP_API_ID=2040 \
+          -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627 \
+          -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON \
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON \
           -D CMAKE_CONFIGURATION_TYPES=Release \
           -D CMAKE_C_FLAGS_RELEASE="-O3 -s" \
           -D CMAKE_CXX_FLAGS_RELEASE="-O3 -s" \
           -D CMAKE_COMPILE_WARNING_AS_ERROR=OFF \
-          -D TDESKTOP_API_TEST=OFF \
-          -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON \
-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF \
-          -D TDESKTOP_API_ID=${{ secrets.TELEGRAM_API_ID }} \
-          -D TDESKTOP_API_HASH=${{ secrets.TELEGRAM_API_HASH }} \
           $DEFINE
 
       - name: Strip binaries
