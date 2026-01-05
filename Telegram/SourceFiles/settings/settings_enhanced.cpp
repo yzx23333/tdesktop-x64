@@ -76,7 +76,7 @@ namespace Settings {
 		)->toggledChanges(
 		) | rpl::filter([=](bool toggled) {
 			return (toggled != GetEnhancedBool("net_dl_speed_boost"));
-		}) | rpl::start_with_next([=](bool toggled) {
+		}) | rpl::on_next([=](bool toggled) {
 			SetEnhancedValue("net_dl_speed_boost", toggled);
 			EnhancedSettings::Write();
 			Core::Restart();
