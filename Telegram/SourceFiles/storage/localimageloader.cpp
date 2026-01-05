@@ -111,6 +111,7 @@ struct PreparedFileThumbnail {
 		"image/png",
 		"image/webp",
 		"video/mp4",
+		"video/x-matroska",
 	};
 	return (filesize > kThumbnailUploadBySize)
 		|| (ranges::find(kThumbnailKnownMimes, filemime.toLower())
@@ -604,12 +605,14 @@ bool FileLoadTask::CheckForVideo(
 	static const auto mimes = {
 		u"video/mp4"_q,
 		u"video/quicktime"_q,
+		u"video/x-matroska"_q,
 	};
 	static const auto extensions = {
 		u".mp4"_q,
 		u".mov"_q,
 		u".m4v"_q,
-		u".webm"_q,
+		//u".webm"_q,
+		u".mkv"_q,
 	};
 	if (!CheckMimeOrExtensions(filepath, result->filemime, mimes, extensions)) {
 		return false;
@@ -629,6 +632,10 @@ bool FileLoadTask::CheckForVideo(
 
 	if (filepath.endsWith(u".mp4"_q, Qt::CaseInsensitive)) {
 		result->filemime = u"video/mp4"_q;
+	}
+
+	if (filepath.endsWith(u".mkv"_q, Qt::CaseInsensitive)) {
+		result->filemime = u"video/x-matroska"_q;
 	}
 	result->media = std::move(media);
 	return true;

@@ -14,6 +14,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include <QtCore/QtEndian>
 #include <QtCore/QBuffer>
 #include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 
 namespace Media {
 namespace Clip {
@@ -39,6 +40,11 @@ bool IsAtom(bytes::const_span header, const char (&atom)[5]) {
 bool CheckStreamingSupport(
 		const Core::FileLocation &location,
 		QByteArray data) {
+	QFileInfo fileInfo(location.name());
+	if (fileInfo.suffix().toLower() == "mkv") {
+		return true;
+	}
+
 	QBuffer buffer;
 	QFile file;
 	if (data.isEmpty()) {
