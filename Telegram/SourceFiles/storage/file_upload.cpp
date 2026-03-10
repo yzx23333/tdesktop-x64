@@ -936,6 +936,7 @@ void Uploader::finishFront() {
 				.file = file,
 				.thumb = thumb,
 				.attachedStickers = attachedStickers,
+				.forceFile = entry.file->forceFile,
 			},
 			.options = options,
 			.edit = edit,
@@ -978,7 +979,7 @@ void Uploader::uploadCoverAsPhoto(
 	_api->request(MTPmessages_UploadMedia(
 		MTP_flags(0),
 		MTPstring(), // business_connection_id
-		session().data().peer(videoId.peer)->input,
+		session().data().peer(videoId.peer)->input(),
 		MTP_inputMediaUploadedPhoto(
 			MTP_flags(0),
 			cover.info.file,

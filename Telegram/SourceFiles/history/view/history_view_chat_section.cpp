@@ -41,6 +41,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/ui_utility.h"
 #include "base/timer_rpl.h"
 #include "api/api_bot.h"
+#include "api/api_chat_participants.h"
 #include "api/api_editing.h"
 #include "api/api_sending.h"
 #include "apiwrap.h"
@@ -299,6 +300,11 @@ ChatWidget::ChatWidget(
 	setupTranslateBar();
 
 	_peer->updateFull();
+	if (const auto channel = _peer->asMegagroup()) {
+		if (!channel->mgInfo->adminsLoaded) {
+			session().api().chatParticipants().requestAdmins(channel);
+		}
+	}
 
 	refreshTopBarActiveChat();
 
@@ -475,9 +481,6 @@ ChatWidget::ChatWidget(
 
 ChatWidget::~ChatWidget() {
 	base::take(_sendAction);
-	if (_repliesRootId || _sublist) {
-		session().api().saveCurrentDraftToCloud();
-	}
 	if (_repliesRootId) {
 		controller()->sendingAnimation().clear();
 	}
@@ -487,6 +490,9 @@ ChatWidget::~ChatWidget() {
 	}
 	if (_topic) {
 		if (_topic->creating()) {
+			if (controller()->activeChatCurrent().topic() == _topic) {
+				controller()->setActiveChatEntry(Dialogs::Key());
+			}
 			_emptyPainter = nullptr;
 			_topic->discard();
 			_topic = nullptr;
@@ -1188,6 +1194,9 @@ bool ChatWidget::confirmSendingFiles(
 	}));
 	box->setCancelledCallback(_composeControls->restoreTextCallback(
 		insertTextOnCancel));
+	box->takeTextWithTagsRequests() | rpl::on_next([=](TextWithTags &&text) {
+		_composeControls->setText(std::move(text));
+	}, box->lifetime());
 
 	//ActivateWindow(controller());
 	controller()->show(std::move(box));
@@ -3332,9 +3341,15 @@ base::unique_qptr<Ui::PopupMenu> ChatWidget::listFillSenderUserpicMenu(
 	auto menu = base::make_unique_q<Ui::PopupMenu>(
 		this,
 		st::popupMenuWithIcons);
+	const auto senderPeer = _history->owner().peer(userpicPeerId);
+	const auto groupPeer = (_history->peer->isChat()
+		|| _history->peer->isMegagroup())
+		? _history->peer.get()
+		: nullptr;
 	Window::FillSenderUserpicMenu(
 		controller(),
-		_history->owner().peer(userpicPeerId),
+		senderPeer,
+		groupPeer,
 		_composeControls->fieldForMention(),
 		searchInEntry,
 		Ui::Menu::CreateAddActionCallback(menu.get()));

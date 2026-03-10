@@ -279,7 +279,7 @@ void SponsoredMessages::request(not_null<History*> history, Fn<void()> done) {
 	request.requestId = _session->api().request(
 		MTPmessages_GetSponsoredMessages(
 			MTP_flags(0),
-			history->peer->input,
+			history->peer->input(),
 			MTPint()) // msg_id
 	).done([=](const MTPmessages_sponsoredMessages &result) {
 		parse(history, result);
@@ -340,7 +340,7 @@ void SponsoredMessages::requestForVideo(
 	request.requestId = _session->api().request(
 		MTPmessages_GetSponsoredMessages(
 			MTP_flags(Flag::f_msg_id),
-			peer->input,
+			peer->input(),
 			MTP_int(item->id.bare))
 	).done([=](const MTPmessages_sponsoredMessages &result) {
 		parseForVideo(peer, result);
@@ -538,7 +538,7 @@ void SponsoredMessages::append(
 		.mediaPhotoId = (mediaPhoto ? mediaPhoto->id : 0),
 		.mediaDocumentId = (mediaDocument ? mediaDocument->id : 0),
 		.backgroundEmojiId = BackgroundEmojiIdFromColor(data.vcolor()),
-		.colorIndex = ColorIndexFromColor(data.vcolor()),
+		.colorIndex = ColorIndexFromColor(data.vcolor()).value_or(0),
 		.isLinkInternal = !UrlRequiresConfirmation(qs(data.vurl())),
 		.isRecommended = data.is_recommended(),
 		.canReport = data.is_can_report(),

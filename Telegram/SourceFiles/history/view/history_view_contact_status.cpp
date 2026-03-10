@@ -37,7 +37,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_forum_topic.h"
 #include "data/data_peer_values.h"
 #include "data/stickers/data_custom_emoji.h"
-#include "settings/settings_premium.h"
+#include "settings/sections/settings_premium.h"
 #include "window/window_peer_menu.h"
 #include "window/window_controller.h"
 #include "window/window_session_controller.h"
@@ -696,7 +696,7 @@ void ContactStatus::setupShareHandler(not_null<UserData*> user) {
 		const auto share = [=](Fn<void()> &&close) {
 			user->setBarSettings(0);
 			user->session().api().request(MTPcontacts_AcceptContact(
-				user->inputUser
+				user->inputUser()
 			)).done([=](const MTPUpdates &result) {
 				user->session().api().applyUpdates(result);
 				show->showToast(tr::lng_new_contact_share_done(
@@ -746,7 +746,7 @@ void ContactStatus::setupReportHandler(not_null<PeerData*> peer) {
 			close();
 
 			peer->session().api().request(MTPmessages_ReportSpam(
-				peer->input
+				peer->input()
 			)).send();
 
 			crl::on_main(&peer->session(), [=] {
@@ -784,7 +784,7 @@ void ContactStatus::setupCloseHandler(not_null<PeerData*> peer) {
 	}) | rpl::on_next([=] {
 		peer->setBarSettings(0);
 		*request = peer->session().api().request(
-			MTPmessages_HidePeerSettingsBar(peer->input)
+			MTPmessages_HidePeerSettingsBar(peer->input())
 		).send();
 	}, _bar.lifetime());
 }
@@ -818,7 +818,7 @@ void ContactStatus::setupRequestInfoHandler(not_null<PeerData*> peer) {
 				}
 				peer->setBarSettings(0);
 				*request = peer->session().api().request(
-					MTPmessages_HidePeerSettingsBar(peer->input)
+					MTPmessages_HidePeerSettingsBar(peer->input())
 				).send();
 				box->closeBox();
 			});

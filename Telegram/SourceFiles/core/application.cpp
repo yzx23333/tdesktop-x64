@@ -1099,7 +1099,8 @@ void Application::checkStartUrls() {
 				iv().showTonSite(url.toString(), {});
 				return false;
 			} else if (_lastActivePrimaryWindow) {
-				return !openLocalUrl(url.toString(), {});
+				const auto local = TryConvertUrlToLocal(url.toString());
+				return !openLocalUrl(local, {});
 			}
 			return true;
 		}) | ranges::to<QList<QUrl>>;
@@ -1112,6 +1113,21 @@ void Application::checkStartUrls() {
 }
 
 bool Application::openLocalUrl(const QString &url, QVariant context) {
+	const auto urlTrimmed = url.trimmed();
+	const auto protocol = u"tg://"_q;
+	if (urlTrimmed.startsWith(protocol, Qt::CaseInsensitive)
+		&& !passcodeLocked()) {
+		const auto command = urlTrimmed.mid(protocol.size());
+		const auto my = context.value<ClickHandlerContext>();
+		const auto controller = my.sessionWindow.get()
+			? my.sessionWindow.get()
+			: _lastActivePrimaryWindow
+			? _lastActivePrimaryWindow->sessionController()
+			: nullptr;
+		if (TryRouterForLocalUrl(controller, command)) {
+			return true;
+		}
+	}
 	return openCustomUrl("tg://", LocalUrlHandlers(), url, context);
 }
 
@@ -1120,36 +1136,7 @@ bool Application::openInternalUrl(const QString &url, QVariant context) {
 }
 
 QString Application::changelogLink() const {
-	const auto base = u"https://github.com/TDesktop-x64/tdesktop/releases"_q;
-	const auto languages = {
-		"id",
-		"de",
-		"fr",
-		"nl",
-		"pl",
-		"tr",
-		"uk",
-		"fa",
-		"ru",
-		"ms",
-		"es",
-		"it",
-		"uz",
-		"pt-br",
-		"be",
-		"ar",
-		"ko",
-	};
-	const auto current = _langpack->id().replace("-raw", "");
-	if (current.isEmpty()) {
-		return base;
-	}
-	for (const auto language : languages) {
-		if (current == language || current.split(u'-')[0] == language) {
-			return base + "?setln=" + language;
-		}
-	}
-	return base;
+	return u"https://github.com/frknkrc44/tdesktop-x64/actions?query=event%3Apush"_q;
 }
 
 bool Application::openCustomUrl(

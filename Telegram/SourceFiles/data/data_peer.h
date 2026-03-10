@@ -317,6 +317,7 @@ public:
 	[[nodiscard]] rpl::producer<bool> slowmodeAppliedValue() const;
 	[[nodiscard]] int slowmodeSecondsLeft() const;
 	[[nodiscard]] bool canManageGroupCall() const;
+	[[nodiscard]] bool canManageRanks() const;
 	[[nodiscard]] bool amMonoforumAdmin() const;
 
 	[[nodiscard]] int starsPerMessage() const;
@@ -584,8 +585,9 @@ public:
 
 	[[nodiscard]] int peerGiftsCount() const;
 
+	[[nodiscard]] MTPInputPeer input() const;
+
 	const PeerId id;
-	MTPinputPeer input = MTP_inputPeerEmpty();
 
 protected:
 	void updateNameDelayed(
@@ -678,6 +680,8 @@ void SetTopPinnedMessageId(
 	PeerData *migrated = nullptr);
 
 [[nodiscard]] uint64 BackgroundEmojiIdFromColor(const MTPPeerColor *color);
-[[nodiscard]] uint8 ColorIndexFromColor(const MTPPeerColor *color);
+[[nodiscard]] std::optional<uint8> ColorIndexFromColor(const MTPPeerColor *);
+
+[[nodiscard]] bool IsBotUserCreatesTopics(not_null<PeerData*>);
 
 } // namespace Data

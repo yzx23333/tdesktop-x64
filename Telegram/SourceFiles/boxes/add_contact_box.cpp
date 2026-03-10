@@ -127,7 +127,7 @@ void ChatCreateDone(
 void MustBePublicDestroy(not_null<ChannelData*> channel) {
 	const auto session = &channel->session();
 	session->api().request(MTPchannels_DeleteChannel(
-		channel->inputChannel
+		channel->inputChannel()
 	)).done([=](const MTPUpdates &result) {
 		session->api().applyUpdates(result);
 	}).send();
@@ -736,7 +736,7 @@ void GroupInfoBox::createGroup(
 		auto user = peer->asUser();
 		Assert(user != nullptr);
 		if (!user->isSelf()) {
-			inputs.push_back(user->inputUser);
+			inputs.push_back(user->inputUser());
 		}
 	}
 	_creationRequestId = _api.request(MTPmessages_CreateChat(
@@ -1035,7 +1035,7 @@ void SetupChannelBox::prepare() {
 	setMouseTracking(true);
 
 	_checkRequestId = _api.request(MTPchannels_CheckUsername(
-		_channel->inputChannel,
+		_channel->inputChannel(),
 		MTP_string("preston")
 	)).fail([=](const MTP::Error &error) {
 		_checkRequestId = 0;
@@ -1282,7 +1282,7 @@ void SetupChannelBox::save() {
 	const auto saveUsername = [&](const QString &link) {
 		_sentUsername = link;
 		_saveRequestId = _api.request(MTPchannels_UpdateUsername(
-			_channel->inputChannel,
+			_channel->inputChannel(),
 			MTP_string(_sentUsername)
 		)).done([=] {
 			const auto done = _done;
@@ -1366,7 +1366,7 @@ void SetupChannelBox::check() {
 	if (link.size() >= Ui::EditPeer::kMinUsernameLength) {
 		_checkUsername = link;
 		_checkRequestId = _api.request(MTPchannels_CheckUsername(
-			_channel->inputChannel,
+			_channel->inputChannel(),
 			MTP_string(link)
 		)).done([=](const MTPBool &result) {
 			_checkRequestId = 0;
@@ -1530,7 +1530,10 @@ void SetupChannelBox::firstCheckFail(UsernameResult result) {
 	}
 }
 
-EditNameBox::EditNameBox(QWidget*, not_null<UserData*> user)
+EditNameBox::EditNameBox(
+	QWidget*,
+	not_null<UserData*> user,
+	Focus focus)
 : _user(user)
 , _api(&_user->session().mtp())
 , _first(
@@ -1543,7 +1546,8 @@ EditNameBox::EditNameBox(QWidget*, not_null<UserData*> user)
 	st::defaultInputField,
 	tr::lng_signup_lastname(),
 	_user->lastName)
-, _invertOrder(langFirstNameGoesSecond()) {
+, _invertOrder(langFirstNameGoesSecond())
+, _focus(focus) {
 }
 
 void EditNameBox::prepare() {
@@ -1568,21 +1572,22 @@ void EditNameBox::prepare() {
 	_last->submits(
 	) | rpl::on_next([=] { submit(); }, _last->lifetime());
 
-	_first->customTab(true);
-	_last->customTab(true);
-
 	_first->tabbed(
-	) | rpl::on_next([=] {
+	) | rpl::on_next([=](not_null<bool*> handled) {
 		_last->setFocus();
+		*handled = true;
 	}, _first->lifetime());
 	_last->tabbed(
-	) | rpl::on_next([=] {
+	) | rpl::on_next([=](not_null<bool*> handled) {
 		_first->setFocus();
+		*handled = true;
 	}, _last->lifetime());
 }
 
 void EditNameBox::setInnerFocus() {
-	(_invertOrder ? _last : _first)->setFocusFast();
+	const auto focusLast = (_focus == Focus::LastName)
+		|| (_focus == Focus::FirstName && _invertOrder);
+	(focusLast ? _last : _first)->setFocusFast();
 }
 
 void EditNameBox::submit() {

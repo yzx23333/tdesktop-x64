@@ -44,7 +44,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/core_settings.h"
 #include "webrtc/webrtc_audio_input_tester.h"
 #include "webrtc/webrtc_device_resolver.h"
-#include "settings/settings_calls.h"
+#include "settings/sections/settings_calls.h"
+#include "settings/settings_common.h"
 #include "settings/settings_credits_graphics.h"
 #include "main/main_session.h"
 #include "apiwrap.h"
@@ -199,7 +200,7 @@ object_ptr<ShareBox> ShareInviteLinkBox(
 			comment.text = link;
 		}
 		auto &api = peer->session().api();
-		for (const auto thread : result) {
+		for (const auto &thread : result) {
 			auto message = Api::MessageToSend(
 				Api::SendAction(thread, options));
 			message.textWithTags = comment;
@@ -714,7 +715,7 @@ void SettingsBox(
 			state->requestId = session->api().request(
 				MTPphone_GetGroupCallStreamRtmpUrl(
 					MTP_flags(0),
-					peer->input,
+					peer->input(),
 					MTP_bool(true)
 			)).done([=](const MTPphone_GroupCallStreamRtmpUrl &result) {
 				auto data = result.match([&](
@@ -787,19 +788,21 @@ void SettingsBox(
 		Ui::AddSkip(layout);
 	}
 	if (rtmp) {
-		const auto volumeItem = layout->add(
-			object_ptr<MenuVolumeItem>(
-				layout,
-				st::groupCallVolumeSettings,
-				st::groupCallVolumeSettingsSlider,
-				call->otherParticipantStateValue(
-				) | rpl::filter([=](const Group::ParticipantState &data) {
-					return data.peer == peer;
-				}),
-				call->rtmpVolume(),
-				Group::kMaxVolume,
-				false,
-				st::groupCallVolumeSettingsPadding));
+		const auto fakeMenu = layout->add(object_ptr<Ui::Menu::Menu>(
+			layout,
+			st::groupCallVolumeSettings));
+		auto volumeItem = base::make_unique_q<MenuVolumeItem>(
+			fakeMenu,
+			st::groupCallVolumeSettings,
+			st::groupCallVolumeSettingsSlider,
+			call->otherParticipantStateValue(
+			) | rpl::filter([=](const Group::ParticipantState &data) {
+				return data.peer == peer;
+			}),
+			call->rtmpVolume(),
+			Group::kMaxVolume,
+			false,
+			st::groupCallVolumeSettingsPadding);
 
 		const auto toggleMute = crl::guard(layout, [=](bool m, bool local) {
 			if (call) {
@@ -829,6 +832,8 @@ void SettingsBox(
 		) | rpl::on_next([=](int volume) {
 			changeVolume(volume, true);
 		}, volumeItem->lifetime());
+
+		fakeMenu->addAction(std::move(volumeItem));
 	}
 
 	if (call->canManage()) {

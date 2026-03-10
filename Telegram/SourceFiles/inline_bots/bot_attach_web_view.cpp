@@ -57,7 +57,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "mainwidget.h"
 #include "payments/payments_checkout_process.h"
 #include "payments/payments_non_panel_process.h"
-#include "settings/settings_premium.h"
+#include "settings/sections/settings_premium.h"
 #include "storage/storage_account.h"
 #include "storage/storage_domain.h"
 #include "ui/basic_click_handlers.h"
@@ -185,14 +185,14 @@ constexpr auto kPopularAppBotsLimit = 100;
 }
 
 [[nodiscard]] Ui::LocationPickerConfig ResolveMapsConfig(
-		not_null<Main::Session*> session) {
-	//const auto &appConfig = session->appConfig();
-	//auto map = appConfig.get<base::flat_map<QString, QString>>(
-	//	u"tdesktop_config_map"_q,
-	//	base::flat_map<QString, QString>());
+	not_null<Main::Session*> session) {
+	const auto &appConfig = session->appConfig();
+	auto map = appConfig.get<base::flat_map<QString, QString>>(
+		u"tdesktop_config_map"_q,
+		base::flat_map<QString, QString>());
 	return {
-		.mapsToken = u"pk.eyJ1Ijoiam9obi1wcmVzdG9uIiwiYSI6ImNseTVod2Y3MDBiczMyanM3d3E3NXloM3kifQ.K12vn1eHYqFAoqVWvnMXiA"_q,
-		.geoToken = u"pk.eyJ1Ijoiam9obi1wcmVzdG9uIiwiYSI6ImNseWg0OWpvNTAwa3AycnF5ZDM3a2dkYmUifQ.n12eA4c3AygrB9yinAp2Ww"_q,
+		.mapsToken = map[u"maps"_q],
+		.geoToken = map[u"geo"_q],
 	};
 }
 
@@ -609,7 +609,7 @@ void ConfirmEmojiStatusBox(
 class BotAction final : public Ui::Menu::ItemBase {
 public:
 	BotAction(
-		not_null<Ui::RpWidget*> parent,
+		not_null<Ui::Menu::Menu*> parent,
 		std::shared_ptr<Ui::Show> show,
 		const style::Menu &st,
 		const AttachWebViewBot &bot,
@@ -650,14 +650,14 @@ private:
 };
 
 BotAction::BotAction(
-	not_null<Ui::RpWidget*> parent,
+	not_null<Ui::Menu::Menu*> parent,
 	std::shared_ptr<Ui::Show> show,
 	const style::Menu &st,
 	const AttachWebViewBot &bot,
 	Fn<void()> callback)
 : ItemBase(parent, st)
 , _show(std::move(show))
-, _dummyAction(new QAction(parent))
+, _dummyAction(Ui::CreateChild<QAction>(parent))
 , _st(st)
 , _bot(bot)
 , _icon(this, _bot.media)
@@ -665,8 +665,8 @@ BotAction::BotAction(
 		+ _st.itemStyle.font->height
 		+ _st.itemPadding.bottom()) {
 	setAcceptBoth(false);
-	initResizeHook(parent->sizeValue());
-	setClickedCallback(std::move(callback));
+	fitToMenuWidth();
+	setActionTriggered(std::move(callback));
 
 	_icon.move(_st.itemIconPosition);
 
@@ -991,7 +991,7 @@ void WebViewInstance::resolveApp(
 	const auto already = _session->data().findBotApp(_bot->id, appname);
 	_requestId = _session->api().request(MTPmessages_GetBotApp(
 		MTP_inputBotAppShortName(
-			_bot->inputUser,
+			_bot->inputUser(),
 			MTP_string(appname)),
 		MTP_long(already ? already->hash : 0)
 	)).done([=](const MTPmessages_BotApp &result) {
@@ -1142,15 +1142,15 @@ void WebViewInstance::requestButton() {
 			| (action.replyTo ? Flag::f_reply_to : Flag(0))
 			| (action.options.sendAs ? Flag::f_send_as : Flag(0))
 			| (action.options.silent ? Flag::f_silent : Flag(0))),
-		action.history->peer->input,
-		_bot->inputUser,
+		action.history->peer->input(),
+		_bot->inputUser(),
 		MTP_bytes(_button.url),
 		MTP_string(_button.startCommand),
 		MTP_dataJSON(MTP_bytes(botThemeParams().json)),
 		MTP_string("tdesktop"),
 		action.mtpReplyTo(),
 		(action.options.sendAs
-			? action.options.sendAs->input
+			? action.options.sendAs->input()
 			: MTP_inputPeerEmpty())
 	)).done([=](const MTPWebViewResult &result) {
 		const auto &data = result.data();
@@ -1181,7 +1181,7 @@ void WebViewInstance::requestSimple() {
 						? Flag()
 						: Flag::f_start_param))
 				: Flag::f_url)),
-		_bot->inputUser,
+		_bot->inputUser(),
 		MTP_bytes(_button.url),
 		MTP_string(_button.startCommand),
 		MTP_dataJSON(MTP_bytes(botThemeParams().json)),
@@ -1211,8 +1211,8 @@ void WebViewInstance::requestMain() {
 					? Flag::f_compact
 					: Flag(0))
 				: Flag(0))),
-		_context.action->history->peer->input,
-		_bot->inputUser,
+		_context.action->history->peer->input(),
+		_bot->inputUser(),
 		MTP_string(_button.startCommand),
 		MTP_dataJSON(MTP_bytes(botThemeParams().json)),
 		MTP_string("tdesktop")
@@ -1241,7 +1241,7 @@ void WebViewInstance::requestApp(bool allowWrite) {
 		| (allowWrite ? Flag::f_write_allowed : Flag(0));
 	_requestId = _session->api().request(MTPmessages_RequestAppWebView(
 		MTP_flags(flags),
-		_context.action->history->peer->input,
+		_context.action->history->peer->input(),
 		MTP_inputBotAppID(MTP_long(app->id), MTP_long(app->accessHash)),
 		MTP_string(_appStartParam),
 		MTP_dataJSON(MTP_bytes(botThemeParams().json)),
@@ -1450,12 +1450,12 @@ void WebViewInstance::started(uint64 queryId) {
 				| (action.replyTo ? Flag::f_reply_to : Flag(0))
 				| (action.options.sendAs ? Flag::f_send_as : Flag(0))
 				| (action.options.silent ? Flag::f_silent : Flag(0))),
-			action.history->peer->input,
-			_bot->inputUser,
+			action.history->peer->input(),
+			_bot->inputUser(),
 			MTP_long(queryId),
 			action.mtpReplyTo(),
 			(action.options.sendAs
-				? action.options.sendAs->input
+				? action.options.sendAs->input()
 				: MTP_inputPeerEmpty())
 		)).done([=] {
 			_prolongId = 0;
@@ -1483,6 +1483,10 @@ Webview::ThemeParams WebViewInstance::botThemeParams() {
 	return result;
 }
 
+Ui::Text::MarkedContext WebViewInstance::botTextContext() {
+	return Core::TextContext({ .session = _session });
+}
+
 auto WebViewInstance::botDownloads(bool forceCheck)
 -> const std::vector<Ui::BotWebView::DownloadsEntry> & {
 	return _session->attachWebView().downloads().list(_bot, forceCheck);
@@ -1496,7 +1500,7 @@ void WebViewInstance::botDownloadsAction(
 
 bool WebViewInstance::botHandleLocalUri(QString uri, bool keepOpen) {
 	const auto local = Core::TryConvertUrlToLocal(uri);
-	if (Core::InternalPassportLink(local)) {
+	if (Core::InternalPassportOrOAuthLink(local)) {
 		return true;
 	} else if (!local.startsWith(u"tg://"_q, Qt::CaseInsensitive)
 		&& !local.startsWith(u"tonsite://"_q, Qt::CaseInsensitive)
@@ -1678,7 +1682,7 @@ void WebViewInstance::botSendData(QByteArray data) {
 	}
 	_dataSent = true;
 	_session->api().request(MTPmessages_SendWebViewData(
-		_bot->inputUser,
+		_bot->inputUser(),
 		MTP_long(base::RandomValue<uint64>()),
 		MTP_string(_button.text),
 		MTP_bytes(data)
@@ -1721,7 +1725,7 @@ void WebViewInstance::botSwitchInlineQuery(
 
 void WebViewInstance::botCheckWriteAccess(Fn<void(bool allowed)> callback) {
 	_session->api().request(MTPbots_CanSendMessage(
-		_bot->inputUser
+		_bot->inputUser()
 	)).done([=](const MTPBool &result) {
 		callback(mtpIsTrue(result));
 	}).fail([=] {
@@ -1731,7 +1735,7 @@ void WebViewInstance::botCheckWriteAccess(Fn<void(bool allowed)> callback) {
 
 void WebViewInstance::botAllowWriteAccess(Fn<void(bool allowed)> callback) {
 	_session->api().request(MTPbots_AllowSendMessage(
-		_bot->inputUser
+		_bot->inputUser()
 	)).done([session = _session, callback](const MTPUpdates &result) {
 		session->api().applyUpdates(result);
 		callback(true);
@@ -1768,7 +1772,7 @@ void WebViewInstance::botRequestEmojiStatusAccess(
 			const auto session = &bot->session();
 			bot->botInfo->canManageEmojiStatus = true;
 			session->api().request(MTPbots_ToggleUserEmojiStatusPermission(
-				bot->inputUser,
+				bot->inputUser(),
 				MTP_bool(true)
 			)).done([=] {
 				callback(true);
@@ -1806,7 +1810,7 @@ void WebViewInstance::botInvokeCustomMethod(
 		Ui::BotWebView::CustomMethodRequest request) {
 	const auto callback = request.callback;
 	_session->api().request(MTPbots_InvokeWebViewCustomMethod(
-		_bot->inputUser,
+		_bot->inputUser(),
 		MTP_string(request.method),
 		MTP_dataJSON(MTP_bytes(request.params))
 	)).done([=](const MTPDataJSON &result) {
@@ -1828,7 +1832,7 @@ void WebViewInstance::botSendPreparedMessage(
 		return;
 	}
 	_session->api().request(MTPmessages_GetPreparedInlineMessage(
-		bot->inputUser,
+		bot->inputUser(),
 		MTP_string(request.id)
 	)).done([=](const MTPmessages_PreparedInlineMessage &result) {
 		const auto panel = weak.get();
@@ -1954,7 +1958,7 @@ void WebViewInstance::botSendPreparedMessage(
 				if (!checked) {
 					return;
 				}
-				state->send = nullptr;
+				[[maybe_unused]] const auto ongoing = base::take(state->send);
 				send({ strong }, options);
 			};
 			state->send({});
@@ -2019,7 +2023,7 @@ void WebViewInstance::botDownloadFile(
 		callback(true);
 	};
 	_session->api().request(MTPbots_CheckDownloadFileParams(
-		_bot->inputUser,
+		_bot->inputUser(),
 		MTP_string(request.name),
 		MTP_string(request.url)
 	)).done([=] {
@@ -2335,7 +2339,7 @@ void AttachWebView::requestAddToMenu(
 	}
 
 	process.requestId = _session->api().request(
-		MTPmessages_GetAttachMenuBot(bot->inputUser)
+		MTPmessages_GetAttachMenuBot(bot->inputUser())
 	).done([=](const MTPAttachMenuBotsBot &result) {
 		_addToMenu[bot].requestId = 0;
 		const auto &data = result.data();
@@ -2548,7 +2552,7 @@ void AttachWebView::toggleInMenu(
 		MTP_flags((state == ToggledState::AllowedToWrite)
 			? Flag::f_write_allowed
 			: Flag()),
-		bot->inputUser,
+		bot->inputUser(),
 		MTP_bool(state != ToggledState::Removed)
 	)).done([=] {
 		_requestId = 0;
@@ -2720,7 +2724,7 @@ std::unique_ptr<Ui::DropdownMenu> MakeAttachBotsMenu(
 			});
 		};
 		auto action = base::make_unique_q<BotAction>(
-			raw,
+			raw->menu(),
 			controller->uiShow(),
 			raw->menu()->st(),
 			bot,

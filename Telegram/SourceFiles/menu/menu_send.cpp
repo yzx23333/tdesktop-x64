@@ -50,7 +50,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_session.h"
 #include "main/main_session.h"
 #include "apiwrap.h"
-#include "settings/settings_premium.h"
+#include "settings/sections/settings_premium.h"
 #include "window/themes/window_theme.h"
 #include "window/section_widget.h"
 #include "styles/style_chat.h"
@@ -452,6 +452,7 @@ void EffectPreview::repaintBackground() {
 		auto rect = QRect(0, 0, st::windowMinWidth, _inner.height());
 		auto context = _theme->preparePaintContext(
 			_chatStyle.get(),
+			rect,
 			rect,
 			rect,
 			false);
@@ -943,7 +944,7 @@ void SetupUnreadMentionsMenu(
 		using Flag = MTPmessages_ReadMentions::Flag;
 		peer->session().api().request(MTPmessages_ReadMentions(
 			MTP_flags(rootId ? Flag::f_top_msg_id : Flag()),
-			peer->input,
+			peer->input(),
 			MTP_int(rootId)
 		)).done([=](const MTPmessages_AffectedHistory &result) {
 			const auto offset = peer->session().api().applyAffectedHistory(
@@ -986,9 +987,9 @@ void SetupUnreadReactionsMenu(
 		peer->session().api().request(MTPmessages_ReadReactions(
 			MTP_flags((rootId ? Flag::f_top_msg_id : Flag(0))
 				| (sublist ? Flag::f_saved_peer_id : Flag(0))),
-			peer->input,
+			peer->input(),
 			MTP_int(rootId),
-			sublist ? sublist->sublistPeer()->input : MTPInputPeer()
+			sublist ? sublist->sublistPeer()->input() : MTPInputPeer()
 		)).done([=](const MTPmessages_AffectedHistory &result) {
 			const auto offset = peer->session().api().applyAffectedHistory(
 				peer,

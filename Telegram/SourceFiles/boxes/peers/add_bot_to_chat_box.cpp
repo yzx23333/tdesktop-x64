@@ -163,8 +163,8 @@ void AddBotToGroupBoxController::requestExistingRights(
 	_bot->session().api().request(_existingRightsRequestId).cancel();
 	_existingRightsRequestId = _bot->session().api().request(
 		MTPchannels_GetParticipant(
-			_existingRightsChannel->inputChannel,
-			_bot->input)
+			_existingRightsChannel->inputChannel(),
+			_bot->input())
 	).done([=](const MTPchannels_ChannelParticipant &result) {
 		result.match([&](const MTPDchannels_channelParticipant &data) {
 			channel->owner().processUsers(data.vusers());
@@ -233,7 +233,7 @@ void AddBotToGroupBoxController::addBotToGroup(not_null<PeerData*> chat) {
 		const auto token = _token;
 		const auto done = [=](
 				ChatAdminRightsInfo newRights,
-				const QString &rank) {
+				const std::optional<QString> &rank) {
 			if (scope == Scope::GroupAdmin) {
 				chat->session().api().sendBotStart(show, bot, chat, token);
 			}

@@ -56,7 +56,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "info/channel_statistics/earn/earn_format.h"
 #include "info/channel_statistics/earn/earn_icons.h"
 #include "info/channel_statistics/earn/info_channel_earn_list.h"
-#include "info/profile/info_profile_cover.h"
 #include "info/profile/info_profile_icon.h"
 #include "info/profile/info_profile_phone_menu.h"
 #include "info/profile/info_profile_text.h"
@@ -601,6 +600,33 @@ base::options::toggle ShowChannelJoinedBelowAbout({
 		openedWrap->resize(width, std::max(h1, size.height()) - added);
 	}, openedWrap->lifetime());
 
+	rpl::combine(
+		state->opened.value(),
+		state->opensIn.value(),
+		state->expanded.value(),
+		dayHoursTextValue(state->day.value())
+	) | rpl::on_next([=](
+			bool opened,
+			TimeId opensIn,
+			bool expanded,
+			const QString &timing) {
+		const auto status = (opened
+			? tr::lng_info_work_open
+			: tr::lng_info_work_closed)(tr::now);
+		const auto when = (!opensIn || expanded)
+			? timing
+			: (opensIn >= 86400)
+			? tr::lng_info_hours_opens_in_days(tr::now, lt_count, opensIn / 86400)
+			: (opensIn >= 3600)
+			? tr::lng_info_hours_opens_in_hours(tr::now, lt_count, opensIn / 3600)
+			: tr::lng_info_hours_opens_in_minutes(
+				tr::now,
+				lt_count,
+				std::max(opensIn / 60, 1));
+		button->setAccessibleName(
+			tr::lng_info_hours_label(tr::now) + ": " + status + ", " + when);
+	}, inner->lifetime());
+
 	const auto labelWrap = inner->add(object_ptr<Ui::RpWidget>(inner));
 	const auto label = Ui::CreateChild<Ui::FlatLabel>(
 		labelWrap,
@@ -743,7 +769,7 @@ void DeleteContactNote(
 		not_null<UserData*> user,
 		Fn<void(const QString &)> showError = nullptr) {
 	user->session().api().request(MTPcontacts_UpdateContactNote(
-		user->inputUser,
+		user->inputUser(),
 		MTP_textWithEntities(MTP_string(), MTP_vector<MTPMessageEntity>())
 	)).done([=] {
 		user->setNote(TextWithEntities());
@@ -923,6 +949,14 @@ void DeleteContactNote(
 		button->clearState();
 		giftIcon->setVisible(!disable);
 	}, result->lifetime());
+
+	BirthdayValueText(
+		rpl::duplicate(birthday),
+		true
+	) | rpl::on_next([=](const QString &accessibleText) {
+		button->setAccessibleName(
+			tr::lng_info_birthday_label(tr::now) + ": " + accessibleText);
+	}, button->lifetime());
 
 	auto nonEmptyText = std::move(
 		text
@@ -1208,6 +1242,10 @@ private:
 	object_ptr<Ui::RpWidget> setupInfo();
 	void setupMainApp();
 	void setupBotPermissions();
+	void addShowTopicsListButton(
+		Ui::MultiSlideTracker &tracker,
+		not_null<Data::Forum*> forum,
+		Ui::MultiSlideTracker *buttonTracker);
 	void addViewChannelButton(
 		Ui::MultiSlideTracker &tracker,
 		not_null<ChannelData*> channel,
@@ -1314,9 +1352,9 @@ void ReportReactionBox(
 			}
 		}
 		data.group->session().api().request(MTPmessages_ReportReaction(
-			data.group->input,
+			data.group->input(),
 			MTP_int(data.messageId.bare),
-			participant->input
+			participant->input()
 		)).done(crl::guard(controller, [=] {
 			controller->showToast(tr::lng_report_thanks(tr::now));
 		})).send();
@@ -1672,6 +1710,7 @@ object_ptr<Ui::RpWidget> DetailsFiller::setupInfo() {
 		const auto qrButton = Ui::CreateChild<Ui::IconButton>(
 			usernameLine.text->parentWidget(),
 			st::infoProfileLabeledButtonQr);
+		qrButton->setAccessibleName(tr::lng_group_invite_context_qr(tr::now));
 		UsernamesValue(_peer) | rpl::on_next([=](const auto &u) {
 			qrButton->setVisible(!u.empty());
 		}, qrButton->lifetime());
@@ -1762,6 +1801,7 @@ object_ptr<Ui::RpWidget> DetailsFiller::setupInfo() {
 			const auto qr = Ui::CreateChild<Ui::IconButton>(
 				linkLine.text->parentWidget(),
 				st::infoProfileLabeledButtonQr);
+			qr->setAccessibleName(tr::lng_group_invite_context_qr(tr::now));
 			UsernamesValue(_peer) | rpl::on_next([=](const auto &u) {
 				qr->setVisible(!u.empty());
 			}, qr->lifetime());
@@ -1859,12 +1899,14 @@ object_ptr<Ui::RpWidget> DetailsFiller::setupPersonalChannel(
 		) | rpl::map([](TextWithEntities &&text, ChannelData *channel) {
 			const auto count = channel ? channel->membersCount() : 0;
 			if (count > 1) {
-				text.append(
-					QString::fromUtf8(" \xE2\x80\xA2 ")
-				).append(tr::lng_chat_status_subscribers(
-					tr::now,
-					lt_count_decimal,
-					count));
+				text.append(' ')
+				.append(Ui::kQBullet)
+				.append(' ')
+				.append(
+					tr::lng_chat_status_subscribers(
+						tr::now,
+						lt_count_decimal,
+						count));
 			}
 			return text;
 		});
@@ -2101,6 +2143,7 @@ object_ptr<Ui::RpWidget> DetailsFiller::setupPersonalChannel(
 				button->lower();
 				inner->lifetime().make_state<base::unique_qptr<Ui::RpWidget>>(
 					button);
+				button->setAccessibleName(tr::lng_profile_view_channel(tr::now));
 			}
 			inner->setAttribute(Qt::WA_TransparentForMouseEvents);
 			Ui::AddSkip(messageChannelWrap->entity());
@@ -2210,7 +2253,7 @@ void DetailsFiller::setupBotPermissions() {
 		user->botInfo->canManageEmojiStatus = allowed;
 		const auto session = &user->session();
 		session->api().request(MTPbots_ToggleUserEmojiStatusPermission(
-			user->inputUser,
+			user->inputUser(),
 			MTP_bool(allowed)
 		)).send();
 	}, emoji->lifetime());
@@ -2324,6 +2367,38 @@ void DetailsFiller::addViewChannelButton(
 		buttonTracker);
 }
 
+void DetailsFiller::addShowTopicsListButton(
+		Ui::MultiSlideTracker &tracker,
+		not_null<Data::Forum*> forum,
+		Ui::MultiSlideTracker *buttonTracker) {
+	using namespace rpl::mappers;
+
+	const auto window = _controller->parentController();
+	const auto peer = forum->peer();
+	auto showTopicsVisible = rpl::combine(
+		window->adaptive().oneColumnValue(),
+		window->shownForum().value(),
+		_1 || (_2 != forum));
+	const auto callback = [=] {
+		if (const auto forum = peer->forum()) {
+			if (peer->useSubsectionTabs()) {
+				window->searchInChat(forum->history());
+			} else {
+				window->showForum(forum);
+			}
+		}
+	};
+	AddMainButton(
+		_wrap,
+		(forum->peer()->isBot()
+			? tr::lng_bot_show_threads_list()
+			: tr::lng_forum_show_topics_list()),
+		std::move(showTopicsVisible),
+		callback,
+		tracker,
+		buttonTracker);
+}
+
 object_ptr<Ui::RpWidget> DetailsFiller::fill() {
 	Expects(!_topic || !_topic->creating());
 
@@ -2370,6 +2445,13 @@ object_ptr<Ui::RpWidget> DetailsFiller::fill() {
 		if (!channel->isMegagroup()) {
 			_dividerOverridden.force_assign(false);
 			addViewChannelButton(_mainTracker, channel, &lastButtonTracker);
+		}
+		if (const auto forum = channel->forum()) {
+			_dividerOverridden.force_assign(false);
+			addShowTopicsListButton(
+				_mainTracker,
+				forum,
+				&lastButtonTracker);
 		}
 	}
 	add(CreateSlideSkipWidget(_wrap))->toggleOn(
@@ -2650,7 +2732,7 @@ void ActionsFiller::addBotCommandActions(not_null<UserData*> user) {
 		tr::lng_profile_bot_privacy(),
 		rpl::single(true),
 		openPrivacyPolicy,
-		nullptr);
+		&st::infoIconPrivacyPolicy);
 }
 
 void ActionsFiller::addReportAction() {
@@ -2885,6 +2967,7 @@ void SetupAddChannelMember(
 	auto add = Ui::CreateChild<Ui::IconButton>(
 		parent.get(),
 		st::infoMembersAddMember);
+	add->setAccessibleName(tr::lng_channel_add_members(tr::now));
 	add->showOn(CanAddMemberValue(channel));
 	add->addClickHandler([=] {
 		Window::PeerMenuAddChannelMembers(navigation, channel);
@@ -3095,33 +3178,6 @@ object_ptr<Ui::RpWidget> SetupChannelMembersAndManage(
 
 	result->entity()->add(CreateSkipWidget(result));
 
-	return result;
-}
-
-Cover *AddCover(
-		not_null<Ui::VerticalLayout*> container,
-		not_null<Controller*> controller,
-		not_null<PeerData*> peer,
-		Data::ForumTopic *topic,
-		Data::SavedSublist *sublist) {
-	const auto shown = sublist ? sublist->sublistPeer() : peer;
-	const auto result = topic
-		? container->add(object_ptr<Cover>(
-			container,
-			controller->parentController(),
-			topic))
-		: container->add(object_ptr<Cover>(
-			container,
-			controller->parentController(),
-			shown,
-			[=] { return controller->wrapWidget(); }));
-	result->showSection(
-	) | rpl::on_next([=](Section section) {
-		controller->showSection(topic
-			? std::make_shared<Info::Memento>(topic, section)
-			: std::make_shared<Info::Memento>(shown, section));
-	}, result->lifetime());
-	result->setOnlineCount(rpl::single(0));
 	return result;
 }
 
