@@ -93,6 +93,7 @@ public:
 	[[nodiscard]] Data::HistoryMessages *maybeMessages();
 
 	[[nodiscard]] HistoryStreamedDrafts &streamedDrafts();
+	[[nodiscard]] HistoryStreamedDrafts *streamedDraftsIfExists() const;
 
 	[[nodiscard]] HistoryItem *joinedMessageInstance() const;
 	void checkLocalMessages();
@@ -297,6 +298,11 @@ public:
 	void clearUnreadReactionsFor(
 		MsgId topicRootId,
 		Data::SavedSublist *sublist);
+	void clearUnreadPollVotesFor(MsgId topicRootId);
+
+	[[nodiscard]] int unreadPollVotesCount() const;
+	void setUnreadPollVotesCount(int count);
+	[[nodiscard]] rpl::producer<int> unreadPollVotesCountChanges() const;
 
 	Data::Draft *draft(Data::DraftKey key) const;
 	void setDraft(Data::DraftKey key, std::unique_ptr<Data::Draft> &&draft);
@@ -418,6 +424,7 @@ public:
 		PeerId dataPeerId,
 		const MTPmessages_Messages &data);
 
+	void viewHeightAdjusted(not_null<Element*> view, int delta);
 	void forgetScrollState() {
 		scrollTopItem = nullptr;
 	}
@@ -556,6 +563,7 @@ private:
 	void mainViewRemoved(
 		not_null<HistoryBlock*> block,
 		not_null<Element*> view);
+	void mainViewHeightAdjusted(not_null<Element*> view, int delta);
 
 	TimeId adjustedChatListTimeId() const override;
 	void changedChatListPinHook() override;
@@ -622,6 +630,7 @@ private:
 
 	void hasUnreadMentionChanged(bool has) override;
 	void hasUnreadReactionChanged(bool has) override;
+	void hasUnreadPollVoteChanged(bool has) override;
 	[[nodiscard]] bool useMyUnreadInParent() const;
 
 	const std::unique_ptr<HistoryMainElementDelegateMixin> _delegateMixin;
@@ -642,6 +651,8 @@ private:
 	std::optional<MsgId> _inboxReadBefore;
 	std::optional<MsgId> _outboxReadBefore;
 	std::optional<int> _unreadCount;
+	int _unreadPollVotesCount = 0;
+	rpl::event_stream<int> _unreadPollVotesCountChanges;
 	std::optional<HistoryItem*> _lastMessage;
 	std::optional<HistoryItem*> _lastServerMessage;
 	base::flat_set<not_null<HistoryItem*>> _clientSideMessages;

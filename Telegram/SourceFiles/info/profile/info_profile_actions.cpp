@@ -79,6 +79,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/rect.h"
 #include "ui/ui_utility.h"
 #include "ui/text/format_values.h"
+#include "ui/text/text_utilities.h"
 #include "ui/text/text_variant.h"
 #include "ui/toast/toast.h"
 #include "ui/vertical_list.h"
@@ -95,6 +96,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "window/window_controller.h" // Window::Controller::show.
 #include "window/window_peer_menu.h"
 #include "window/window_session_controller.h"
+#include "styles/style_boxes.h"
 #include "styles/style_channel_earn.h" // st::channelEarnCurrencyCommonMargins
 #include "styles/style_info.h"
 #include "styles/style_layers.h"
@@ -417,6 +419,7 @@ base::options::toggle ShowChannelJoinedBelowAbout({
 			st::infoHoursOuter),
 		st::infoProfileLabeledPadding - st::infoHoursOuterMargin);
 	const auto button = result->entity();
+	button->setTextTransform(Ui::RoundButtonTextTransform::ToUpper);
 	const auto inner = Ui::CreateChild<Ui::VerticalLayout>(button);
 	button->widthValue() | rpl::on_next([=](int width) {
 		const auto margin = st::infoHoursOuterMargin;
@@ -653,7 +656,6 @@ base::options::toggle ShowChannelJoinedBelowAbout({
 		labelWrap,
 		std::move(linkText),
 		st::defaultTableSmallButton);
-	link->setTextTransform(Ui::RoundButton::TextTransform::NoTransform);
 	link->setClickedCallback([=] {
 		state->myTimezone = !state->myTimezone.current();
 		state->expanded = true;
@@ -906,6 +908,7 @@ void DeleteContactNote(
 		st::infoProfileLabeledPadding - st::infoHoursOuterMargin);
 	result->setDuration(st::infoSlideDuration);
 	const auto button = result->entity();
+	button->setTextTransform(Ui::RoundButtonTextTransform::ToUpper);
 
 	auto outer = Ui::CreateChild<Ui::SlideWrap<Ui::VerticalLayout>>(
 		button,
@@ -1240,7 +1243,7 @@ public:
 private:
 	object_ptr<Ui::RpWidget> setupPersonalChannel(not_null<UserData*> user);
 	object_ptr<Ui::RpWidget> setupInfo();
-	void setupMainApp();
+	void setupMainApp(bool suppressBottom = false);
 	void setupBotPermissions();
 	void addShowTopicsListButton(
 		Ui::MultiSlideTracker &tracker,
@@ -2185,7 +2188,7 @@ object_ptr<Ui::RpWidget> DetailsFiller::setupPersonalChannel(
 	return result;
 }
 
-void DetailsFiller::setupMainApp() {
+void DetailsFiller::setupMainApp(bool suppressBottom) {
 	const auto button = _wrap->add(
 		object_ptr<Ui::RoundButton>(
 			_wrap,
@@ -2193,7 +2196,6 @@ void DetailsFiller::setupMainApp() {
 			st::infoOpenApp),
 		st::infoOpenAppMargin,
 		style::al_justify);
-	button->setTextTransform(Ui::RoundButton::TextTransform::NoTransform);
 
 	const auto user = _peer->asUser();
 	const auto controller = _controller->parentController();
@@ -2209,6 +2211,9 @@ void DetailsFiller::setupMainApp() {
 	});
 
 	const auto url = tr::lng_mini_apps_tos_url(tr::now);
+	const auto parts = suppressBottom
+		? RectPart::Top
+		: (RectPart::Top | RectPart::Bottom);
 	const auto divider = Ui::AddDividerText(
 		_wrap,
 		rpl::combine(
@@ -2224,7 +2229,10 @@ void DetailsFiller::setupMainApp() {
 				text = text.append(u"\n\n"_q).append(verify->description);
 			}
 			return text;
-		}));
+		}),
+		st::defaultBoxDividerLabelPadding,
+		st::defaultDividerLabel,
+		parts);
 	divider->setClickHandlerFilter([=](const auto &...) {
 		UrlClickHandler::Open(url);
 		return false;
@@ -2431,11 +2439,48 @@ object_ptr<Ui::RpWidget> DetailsFiller::fill() {
 		if (const auto info = user->botInfo.get()) {
 			if (info->hasMainApp) {
 				_dividerOverridden.force_assign(true);
-				setupMainApp();
+				const auto managedBotFollows = user->botManagerId()
+					&& !info->canManageEmojiStatus
+					&& user->owner().userLoaded(user->botManagerId());
+				setupMainApp(managedBotFollows);
 			}
 			if (info->canManageEmojiStatus) {
 				_dividerOverridden.force_assign(false);
 				setupBotPermissions();
+			}
+			if (user->botManagerId()) {
+				if (const auto managerUser = user->owner().userLoaded(
+						user->botManagerId())) {
+					if (!info->hasMainApp) {
+						_dividerOverridden.force_assign(true);
+					}
+					const auto botUsername = managerUser->username();
+					const auto linkText = botUsername.isEmpty()
+						? managerUser->name()
+						: (u"@"_q + botUsername);
+					const auto parts = (info->hasMainApp && !info->canManageEmojiStatus)
+						? RectPart::Bottom
+						: (RectPart::Top | RectPart::Bottom);
+					Ui::AddSkip(_wrap);
+					const auto divider = Ui::AddDividerText(
+						_wrap,
+						tr::lng_managed_bot_label(
+							lt_icon,
+							rpl::single(Ui::Text::IconEmoji(&st::managedBotIconEmoji)),
+							lt_bot,
+							rpl::single(tr::link(linkText)),
+							tr::marked),
+						st::defaultBoxDividerLabelPadding,
+						st::defaultDividerLabel,
+						parts);
+					const auto weak = base::make_weak(_controller);
+					divider->setClickHandlerFilter([=](const auto &...) {
+						if (const auto strong = weak.get()) {
+							strong->showPeerInfo(managerUser);
+						}
+						return false;
+					});
+				}
 			}
 		}
 		if (!user->isSelf() && !_sublist) {
@@ -2708,7 +2753,10 @@ void ActionsFiller::addBotCommandActions(not_null<UserData*> user) {
 		tr::lng_profile_bot_help(),
 		u"help"_q,
 		&st::infoIconInformation);
-	addBotCommand(tr::lng_profile_bot_settings(), u"settings"_q);
+	addBotCommand(
+		tr::lng_profile_bot_settings(),
+		u"settings"_q,
+		&st::infoIconSettings);
 	//addBotCommand(tr::lng_profile_bot_privacy(), u"privacy"_q);
 	const auto openUrl = [=](const QString &url) {
 		Core::App().iv().openWithIvPreferred(
@@ -2855,11 +2903,7 @@ void ActionsFiller::fillUserActions(not_null<UserData*> user) {
 	if (!user->isSelf() && !user->isSupport() && !user->isVerifyCodes()) {
 		if (user->isBot()) {
 			addBotCommandActions(user);
-		}
-		_wrap->add(CreateSkipWidget(
-			_wrap,
-			st::infoBlockButtonSkip));
-		if (user->isBot()) {
+			_wrap->add(CreateSkipWidget(_wrap, st::infoBlockButtonSkip));
 			addReportAction();
 		}
 		addBlockAction(user);
