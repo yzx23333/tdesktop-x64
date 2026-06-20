@@ -114,6 +114,19 @@ jobs:
           Remove-Item vs_buildtools.exe -Force
           if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { exit $p.ExitCode }
 
+      - name: Install ATL SDK for x64.
+        if: matrix.arch == 'x64'
+        shell: pwsh
+        run: |
+          $VS_INSTALL = "C:\Program Files\Microsoft Visual Studio\18\Enterprise"
+          $VS_INSTALLER = "$VS_INSTALL\vs\vs_installershell.exe"
+          if ((Test-Path $VS_INSTALL) -and (Test-Path $VS_INSTALLER)) {
+            & "$VS_INSTALLER" modify `
+              --quiet --wait --norestart --nocache `
+              --add Microsoft.VisualStudio.Component.VC.ATL.x64 `
+              --add Microsoft.VisualStudio.Component.VC.ATLMFC.x64
+          }
+
       - uses: Eden-CI/msvc-dev-cmd@master
         name: Native Tools Command Prompt.
         with:
