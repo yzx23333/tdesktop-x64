@@ -33,6 +33,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "window/window_controller.h"
 #include "window/window_session_controller.h"
 #include "core/application.h"
+#include "core/version.h"
 #include "mainwindow.h"
 #include "api/api_reactions_notify_settings.h"
 #include "api/api_updates.h"
@@ -1614,7 +1615,7 @@ void NativeManager::doShowNotification(NotificationFields &&fields) {
 		});
 	} : Fn<NotificationSound()>();
 	auto actions = std::vector<NotificationAction>();
-	if (AllowNotificationActions(peer)) {
+	if (AllowNotificationActions(peer) && !options.hideMarkAsRead) {
 		if (const auto markup = item->inlineReplyMarkup()) {
 			using ButtonType = HistoryMessageMarkupButton::Type;
 			const auto &rows = markup->data.rows;

@@ -43,7 +43,7 @@ on:
 jobs:
   linux:
     name: Rocky Linux 8
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/nightly') && 'depot-ubuntu-latest-16' || 'ubuntu-latest' }}
 
     strategy:
       matrix:
@@ -78,14 +78,26 @@ jobs:
           tool-cache: true
 
       - name: Set up Docker Buildx.
+        id: setup-buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Libraries cache.
+        id: cache-libs
         uses: actions/cache@v5
         with:
-          path: ${{ runner.temp }}/.buildx-cache
+          path: |
+            ${{ runner.temp }}/.buildx-cache
+            ${{ runner.temp }}/.mount-cache
           key: ${{ runner.OS }}-libs-${{ hashFiles('Telegram/build/docker/centos_env/**') }}
           restore-keys: ${{ runner.OS }}-libs-
+
+      - name: Restore Docker cache mounts.
+        uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723
+        with:
+          builder: ${{ steps.setup-buildx.outputs.name }}
+          cache-dir: ${{ runner.temp }}/.mount-cache
+          dockerfile: Telegram/build/docker/centos_env/Dockerfile
+          skip-extraction: ${{ steps.cache-libs.outputs.cache-hit }}
 
       - name: Libraries.
         uses: docker/build-push-action@v7
@@ -101,6 +113,14 @@ jobs:
           rm -rf ${{ runner.temp }}/.buildx-cache
           mv ${{ runner.temp }}/.buildx-cache{-new,}
 
+      - name: Telegram Desktop cache.
+        if: env.ONLY_CACHE == 'false'
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/.tdesktop-cache
+          key: ${{ runner.OS }}-tdesktop-${{ matrix.defines || 'null' }}-${{ github.run_id }}
+          restore-keys: ${{ runner.OS }}-tdesktop-${{ matrix.defines || 'null' }}-
+
       - name: Telegram Desktop build.
         if: env.ONLY_CACHE == 'false'
         run: |
@@ -113,12 +133,14 @@ jobs:
             echo "ARTIFACT_NAME=Telegram" >> $GITHUB_ENV
           fi
 
+          mkdir -p ${{ runner.temp }}/.tdesktop-cache
+
           docker run --rm \
           -u $(id -u) \
           -v $PWD:/usr/src/tdesktop \
           -e CONFIG=Release \
           $IMAGE_TAG \
-          /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
+          env -u CCACHE_DISABLE /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
           -D TDESKTOP_API_ID=2040 \
           -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627 \
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON \
@@ -133,6 +155,12 @@ jobs:
         if: env.ONLY_CACHE == 'false'
         run: |
           find out/Release -type f -executable -exec strip --strip-all {} \;
+
+      - name: Save Telegram Desktop cache.
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ runner.temp }}/.tdesktop-cache
+          key: ${{ runner.OS }}-tdesktop${{ case(!!matrix.defines, format('-{0}', matrix.defines), '') }}
 
       - name: Check.
         if: env.ONLY_CACHE == 'false'
