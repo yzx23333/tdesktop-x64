@@ -1158,8 +1158,7 @@ void AddDownloadFilesAction(
 		const ContextMenuRequest &request,
 		not_null<ListWidget*> list) {
 	if (!request.overSelection
-		|| request.selectedItems.empty()
-		|| list->hasCopyRestrictionForSelected()) {
+		|| request.selectedItems.empty()) {
 		return;
 	}
 	Menu::AddDownloadFilesAction(
@@ -1663,7 +1662,6 @@ void FillContextMenuItems(
 	AddTodoListAction(result, request, list);
 
 	if (request.overSelection
-		&& !list->hasCopyRestrictionForSelected()
 		&& !list->getSelectedText().empty()) {
 		const auto text = request.selectedItems.empty()
 			? tr::lng_context_copy_selected(tr::now)

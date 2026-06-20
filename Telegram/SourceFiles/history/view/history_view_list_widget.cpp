@@ -1714,9 +1714,9 @@ bool ListWidget::showCopyMediaRestriction(not_null<HistoryItem*> item) {
 }
 
 bool ListWidget::hasCopyRestrictionForSelected() const {
-	if (hasCopyRestriction()) {
-		return true;
-	}
+	// if (hasCopyRestriction()) {
+	// 	return true;
+	// }
 	if (_selected.empty()) {
 		if (_selectedTextItem && _selectedTextItem->forbidsForward()) {
 			return true;

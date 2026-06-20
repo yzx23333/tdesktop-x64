@@ -4031,9 +4031,9 @@ bool HistoryInner::showCopyMediaRestriction(not_null<HistoryItem*> item) {
 }
 
 bool HistoryInner::hasCopyRestrictionForSelected() const {
-	if (hasCopyRestriction()) {
-		return true;
-	}
+	// if (hasCopyRestriction()) {
+	// 	return true;
+	// }
 	for (const auto &item : _selected) {
 		if (item && item->forbidsForward()) {
 			return true;
