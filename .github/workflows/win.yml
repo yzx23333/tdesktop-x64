@@ -44,7 +44,7 @@ on:
 jobs:
   windows:
     name: Windows
-    runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-arm' || ((github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/nightly') && 'depot-windows-latest-16' || 'windows-latest') }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-arm' || ((github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/nightly') && 'depot-windows-latest' || 'windows-latest') }}
 
     strategy:
       matrix:
@@ -101,31 +101,37 @@ jobs:
           git config --global user.email "you@example.com"
           git config --global user.name "Sample"
 
-      - name: Install VS 2026 Build Tools.
-        if: matrix.arch == 'arm64'
+      - name: Setup ATL SDK environment.
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri https://aka.ms/vs/18/stable/vs_buildtools.exe -OutFile vs_buildtools.exe
-          $p = Start-Process -FilePath .\vs_buildtools.exe -Wait -PassThru -ArgumentList `
-            '--quiet','--wait','--norestart','--nocache', `
-            '--add','Microsoft.VisualStudio.Workload.VCTools', `
-            '--add','Microsoft.VisualStudio.Component.VC.Tools.ARM64', `
-            '--add','Microsoft.VisualStudio.Component.VC.ATL.ARM64'
-          Remove-Item vs_buildtools.exe -Force
-          if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { exit $p.ExitCode }
+          Write-Host "Setting up ATL SDK for Breakpad compilation..."
+          
+          $ATL_INCLUDE = "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.44.35207\atlmfc\include"
+          $ATL_LIB = "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.44.35207\atlmfc\lib\x64"
 
-      - name: Install ATL SDK for x64.
-        if: matrix.arch == 'x64'
-        shell: pwsh
-        run: |
-          $VS_INSTALL = "C:\Program Files\Microsoft Visual Studio\18\Enterprise"
-          $VS_INSTALLER = "$VS_INSTALL\vs\vs_installershell.exe"
-          if ((Test-Path $VS_INSTALL) -and (Test-Path $VS_INSTALLER)) {
-            & "$VS_INSTALLER" modify `
-              --quiet --wait --norestart --nocache `
-              --add Microsoft.VisualStudio.Component.VC.ATL.x64 `
-              --add Microsoft.VisualStudio.Component.VC.ATLMFC.x64
+          if (Test-Path $ATL_INCLUDE) {
+            Write-Host "✓ ATL include found: $ATL_INCLUDE"
+          } else {
+            Write-Host "⚠ Warning: ATL include path not found at expected location"
+            Write-Host "Attempting to find it..."
+            $found = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC" -Filter "atlbase.h" -Recurse -ErrorAction SilentlyContinue
+            if ($found) {
+              $ATL_INCLUDE = $found[0].DirectoryName
+              Write-Host "✓ Found ATL at: $ATL_INCLUDE"
+            }
           }
+          
+          $currentInclude = [Environment]::GetEnvironmentVariable("INCLUDE", "Machine")
+          $newInclude = "$ATL_INCLUDE;$currentInclude"
+          [Environment]::SetEnvironmentVariable("INCLUDE", $newInclude, "Machine")
+          
+          $currentLib = [Environment]::GetEnvironmentVariable("LIB", "Machine")
+          $newLib = "$ATL_LIB;$currentLib"
+          [Environment]::SetEnvironmentVariable("LIB", $newLib, "Machine")
+          
+          Write-Host "Environment variables updated:"
+          Write-Host "INCLUDE=$newInclude"
+          Write-Host "LIB=$newLib"
 
       - uses: Eden-CI/msvc-dev-cmd@master
         name: Native Tools Command Prompt.
@@ -227,7 +233,7 @@ jobs:
 
       - name: Free up some disk space.
         shell: bash
-        run: find $LibrariesPath '(' '(' ! '(' -name '*.lib' -o -name '*.a' -o -name '*.exe' -o -name '*.h' -o -name '*.hpp' -o -name '*.inc' -o -name '*.cmake' -o -path '*/include/*' -o -path '*/objects-*' -o -path '*/cache_keys/*' -o -path '*/patches/*' ')' -type f ')' -o -empty ')' -delete
+        run: find $LibrariesPath '(' '(' ! '(' -name '*.lib' -o -name '*.a' -o -name '*.exe' -o -name '*.h' -o -name '*.hpp' -o -name '*.inc' -o -name '*.cmake' -o -path '*/include/*' -o -path '*/objdirs/*' ')' -o -name '*.o' ')' ')' -delete
 
       - name: Telegram Desktop build.
         if: env.ONLY_CACHE == 'false'
